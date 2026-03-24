@@ -2,6 +2,20 @@ const pedidoModel = require("../models/pedidoModel");
 
 const TIPOS_RECEBIMENTO = ["entrega", "retirada"];
 const FORMAS_PAGAMENTO = ["dinheiro", "cartao", "pix"];
+const STATUS_PERMITIDOS = [
+  "pendente",
+  "em_preparo",
+  "saiu_para_entrega",
+  "entregue",
+  "cancelado",
+];
+const TRANSICOES_VALIDAS = {
+  pendente: ["em_preparo", "cancelado"],
+  em_preparo: ["saiu_para_entrega", "entregue", "cancelado"],
+  saiu_para_entrega: ["entregue", "cancelado"],
+  entregue: [],
+  cancelado: [],
+};
 
 function validatePayload(payload) {
   const clienteNome =
@@ -257,7 +271,56 @@ async function listPedidos(empresaId) {
   return { status: 200, data: Array.from(map.values()) };
 }
 
+async function updatePedidoStatus(empresaId, id, payload) {
+  const status =
+    typeof payload.status === "string"
+      ? payload.status.trim().toLowerCase()
+      : "";
+
+  if (!STATUS_PERMITIDOS.includes(status)) {
+    return {
+      status: 400,
+      error:
+        "status deve ser pendente, em_preparo, saiu_para_entrega, entregue ou cancelado",
+    };
+  }
+
+  const pedidoAtual = await pedidoModel.findPedidoByEmpresaAndId(empresaId, id);
+
+  if (!pedidoAtual) {
+    return { status: 404, error: "pedido não encontrado para esta empresa" };
+  }
+
+  const statusAtual = String(pedidoAtual.status || "").toLowerCase();
+  const proximosStatus = TRANSICOES_VALIDAS[statusAtual] || [];
+
+  if (!proximosStatus.includes(status)) {
+    return {
+      status: 400,
+      error: `transição de status inválida: ${statusAtual} -> ${status}`,
+    };
+  }
+
+  const affectedRows = await pedidoModel.updatePedidoStatusByEmpresaAndId(
+    empresaId,
+    id,
+    status,
+  );
+
+  if (!affectedRows) {
+    return { status: 404, error: "pedido não encontrado para esta empresa" };
+  }
+
+  const pedidoAtualizado = await pedidoModel.findPedidoByEmpresaAndId(
+    empresaId,
+    id,
+  );
+
+  return { status: 200, data: pedidoAtualizado };
+}
+
 module.exports = {
   createPedido,
   listPedidos,
+  updatePedidoStatus,
 };

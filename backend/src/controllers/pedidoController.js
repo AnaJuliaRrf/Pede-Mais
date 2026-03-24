@@ -25,7 +25,27 @@ async function listPedidos(req, res) {
   }
 }
 
+async function updatePedidoStatus(req, res) {
+  try {
+    const { empresaId, id } = req.params;
+    const result = await pedidoService.updatePedidoStatus(
+      empresaId,
+      id,
+      req.body || {},
+    );
+
+    if (result.error) {
+      return res.status(result.status).json({ error: result.error });
+    }
+
+    return res.status(result.status).json(result.data);
+  } catch (error) {
+    return res.status(500).json({ error: "erro interno do servidor" });
+  }
+}
+
 module.exports = {
   createPedido,
   listPedidos,
+  updatePedidoStatus,
 };

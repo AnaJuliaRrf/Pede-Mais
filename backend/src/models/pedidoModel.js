@@ -106,6 +106,39 @@ async function listPedidosByEmpresa(empresaId) {
   return rows;
 }
 
+async function findPedidoByEmpresaAndId(empresaId, id) {
+  const [rows] = await db.query(
+    `SELECT
+      id,
+      empresa_id,
+      cliente_nome,
+      telefone,
+      tipo_recebimento,
+      endereco,
+      forma_pagamento,
+      troco_para,
+      valor_total,
+      status
+     FROM pedidos
+     WHERE id = ? AND empresa_id = ?
+     LIMIT 1`,
+    [id, empresaId],
+  );
+
+  return rows[0] || null;
+}
+
+async function updatePedidoStatusByEmpresaAndId(empresaId, id, status) {
+  const [result] = await db.query(
+    `UPDATE pedidos
+     SET status = ?
+     WHERE id = ? AND empresa_id = ?`,
+    [status, id, empresaId],
+  );
+
+  return result.affectedRows;
+}
+
 module.exports = {
   getConnection,
   findProdutoParaPedido,
@@ -113,4 +146,6 @@ module.exports = {
   insertItensPedido,
   baixarEstoque,
   listPedidosByEmpresa,
+  findPedidoByEmpresaAndId,
+  updatePedidoStatusByEmpresaAndId,
 };
