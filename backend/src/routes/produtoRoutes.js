@@ -1,11 +1,28 @@
 const express = require("express");
 const produtoController = require("../controllers/produtoController");
+const authenticate = require("../middlewares/authenticate");
+const authorizeEmpresa = require("../middlewares/authorizeEmpresa");
 
 const router = express.Router({ mergeParams: true });
 
-router.post("/", produtoController.createProduto);
 router.get("/", produtoController.listProdutos);
-router.put("/:id", produtoController.updateProduto);
-router.delete("/:id", produtoController.deleteProduto);
+router.post(
+  "/",
+  authenticate,
+  authorizeEmpresa,
+  produtoController.createProduto,
+);
+router.put(
+  "/:id",
+  authenticate,
+  authorizeEmpresa,
+  produtoController.updateProduto,
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorizeEmpresa,
+  produtoController.deleteProduto,
+);
 
 module.exports = router;
