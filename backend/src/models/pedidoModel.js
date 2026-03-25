@@ -79,7 +79,25 @@ async function baixarEstoque(connection, produtoId, quantidade) {
   );
 }
 
-async function listPedidosByEmpresa(empresaId) {
+async function listPedidosByEmpresa(empresaId, filters = {}) {
+  const whereClauses = ["p.empresa_id = ?"];
+  const params = [empresaId];
+
+  if (filters.status) {
+    whereClauses.push("p.status = ?");
+    params.push(filters.status);
+  }
+
+  if (filters.data_inicio) {
+    whereClauses.push("DATE(p.criado_em) >= ?");
+    params.push(filters.data_inicio);
+  }
+
+  if (filters.data_fim) {
+    whereClauses.push("DATE(p.criado_em) <= ?");
+    params.push(filters.data_fim);
+  }
+
   const [rows] = await db.query(
     `SELECT
       p.id,
@@ -90,7 +108,9 @@ async function listPedidosByEmpresa(empresaId) {
       p.endereco,
       p.forma_pagamento,
       p.troco_para,
+      p.status,
       p.valor_total,
+      p.criado_em,
       ip.produto_id,
       ip.quantidade,
       ip.preco_unitario,
@@ -98,9 +118,38 @@ async function listPedidosByEmpresa(empresaId) {
      FROM pedidos p
      LEFT JOIN itens_pedido ip ON ip.pedido_id = p.id
      LEFT JOIN produtos pr ON pr.id = ip.produto_id
-     WHERE p.empresa_id = ?
+     WHERE ${whereClauses.join(" AND ")}
      ORDER BY p.id DESC, ip.id ASC`,
-    [empresaId],
+    params,
+  );
+
+  return rows;
+}
+
+async function findPedidoDetalheByEmpresaAndId(empresaId, id) {
+  const [rows] = await db.query(
+    `SELECT
+      p.id,
+      p.empresa_id,
+      p.cliente_nome,
+      p.telefone,
+      p.tipo_recebimento,
+      p.endereco,
+      p.forma_pagamento,
+      p.troco_para,
+      p.status,
+      p.valor_total,
+      p.criado_em,
+      ip.produto_id,
+      ip.quantidade,
+      ip.preco_unitario,
+      pr.nome AS produto_nome
+     FROM pedidos p
+     LEFT JOIN itens_pedido ip ON ip.pedido_id = p.id
+     LEFT JOIN produtos pr ON pr.id = ip.produto_id
+     WHERE p.id = ? AND p.empresa_id = ?
+     ORDER BY ip.id ASC`,
+    [id, empresaId],
   );
 
   return rows;
@@ -146,6 +195,7 @@ module.exports = {
   insertItensPedido,
   baixarEstoque,
   listPedidosByEmpresa,
+  findPedidoDetalheByEmpresaAndId,
   findPedidoByEmpresaAndId,
   updatePedidoStatusByEmpresaAndId,
 };

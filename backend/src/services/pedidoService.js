@@ -17,6 +17,66 @@ const TRANSICOES_VALIDAS = {
   cancelado: [],
 };
 
+function isValidDateYmd(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function validateListFilters(filters) {
+  const status =
+    typeof filters.status === "string"
+      ? filters.status.trim().toLowerCase()
+      : "";
+  const dataInicio =
+    typeof filters.data_inicio === "string" ? filters.data_inicio.trim() : "";
+  const dataFim =
+    typeof filters.data_fim === "string" ? filters.data_fim.trim() : "";
+
+  if (status && !STATUS_PERMITIDOS.includes(status)) {
+    return {
+      status: 400,
+      error:
+        "status deve ser pendente, em_preparo, saiu_para_entrega, entregue ou cancelado",
+    };
+  }
+
+  if (dataInicio && !isValidDateYmd(dataInicio)) {
+    return {
+      status: 400,
+      error: "data_inicio deve estar no formato YYYY-MM-DD",
+    };
+  }
+
+  if (dataFim && !isValidDateYmd(dataFim)) {
+    return { status: 400, error: "data_fim deve estar no formato YYYY-MM-DD" };
+  }
+
+  if (dataInicio && dataFim && dataInicio > dataFim) {
+    return {
+      status: 400,
+      error: "data_inicio não pode ser maior que data_fim",
+    };
+  }
+
+  return {
+    data: {
+      status: status || null,
+      data_inicio: dataInicio || null,
+      data_fim: dataFim || null,
+    },
+  };
+}
+
 function validatePayload(payload) {
   const clienteNome =
     typeof payload.cliente_nome === "string" ? payload.cliente_nome.trim() : "";
@@ -236,8 +296,16 @@ async function createPedido(empresaId, payload) {
   }
 }
 
-async function listPedidos(empresaId) {
-  const rows = await pedidoModel.listPedidosByEmpresa(empresaId);
+async function listPedidos(empresaId, filters = {}) {
+  const validation = validateListFilters(filters);
+  if (validation.error) {
+    return { status: validation.status, error: validation.error };
+  }
+
+  const rows = await pedidoModel.listPedidosByEmpresa(
+    empresaId,
+    validation.data,
+  );
 
   const map = new Map();
   for (const row of rows) {
@@ -251,7 +319,9 @@ async function listPedidos(empresaId) {
         endereco: row.endereco,
         forma_pagamento: row.forma_pagamento,
         troco_para: row.troco_para,
+        status: row.status,
         valor_total: row.valor_total,
+        criado_em: row.criado_em,
         itens: [],
       });
     }
@@ -269,6 +339,45 @@ async function listPedidos(empresaId) {
   }
 
   return { status: 200, data: Array.from(map.values()) };
+}
+
+async function getPedidoById(empresaId, id) {
+  const rows = await pedidoModel.findPedidoDetalheByEmpresaAndId(empresaId, id);
+
+  if (!rows.length) {
+    return { status: 404, error: "pedido não encontrado para esta empresa" };
+  }
+
+  const first = rows[0];
+  const pedido = {
+    id: first.id,
+    cliente_nome: first.cliente_nome,
+    telefone: first.telefone,
+    tipo_recebimento: first.tipo_recebimento,
+    endereco: first.endereco,
+    forma_pagamento: first.forma_pagamento,
+    troco_para: first.troco_para,
+    status: first.status,
+    valor_total: first.valor_total,
+    criado_em: first.criado_em,
+    empresa_id: first.empresa_id,
+    itens: [],
+  };
+
+  for (const row of rows) {
+    if (row.produto_id != null) {
+      const subtotal = Number(row.preco_unitario) * Number(row.quantidade);
+      pedido.itens.push({
+        produto_id: row.produto_id,
+        produto_nome: row.produto_nome,
+        quantidade: row.quantidade,
+        preco_unitario: row.preco_unitario,
+        subtotal,
+      });
+    }
+  }
+
+  return { status: 200, data: pedido };
 }
 
 async function updatePedidoStatus(empresaId, id, payload) {
@@ -322,5 +431,6 @@ async function updatePedidoStatus(empresaId, id, payload) {
 module.exports = {
   createPedido,
   listPedidos,
+  getPedidoById,
   updatePedidoStatus,
 };
