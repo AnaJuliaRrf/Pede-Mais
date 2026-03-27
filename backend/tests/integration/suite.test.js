@@ -1055,3 +1055,163 @@ describe("PASSO 8 - Auth + JWT", () => {
     expect(response.status).toBe(200);
   });
 });
+
+describe("PASSO 9 - Webhook WhatsApp (fundação)", () => {
+  beforeAll(() => {
+    process.env.WHATSAPP_VERIFY_TOKEN =
+      process.env.WHATSAPP_VERIFY_TOKEN || "test_verify_token";
+  });
+
+  test("9.1 handshake válido retorna challenge", async () => {
+    const response = await request(app).get("/webhook/whatsapp").query({
+      "hub.mode": "subscribe",
+      "hub.verify_token": process.env.WHATSAPP_VERIFY_TOKEN,
+      "hub.challenge": "12345",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toBe("12345");
+  });
+
+  test("9.2 handshake inválido retorna 403", async () => {
+    const response = await request(app).get("/webhook/whatsapp").query({
+      "hub.mode": "subscribe",
+      "hub.verify_token": "token_invalido",
+      "hub.challenge": "12345",
+    });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toBe("verificação inválida");
+  });
+
+  test("9.3 evento válido é persistido e marcado como processado", async () => {
+    const idExterno = `${TEST_PREFIX}-WA-VALIDO-${Date.now()}`;
+    const payload = {
+      empresa_id: 1,
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                messages: [
+                  {
+                    id: idExterno,
+                    from: "5511999999999",
+                    text: { body: "oi" },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const response = await request(app).post("/webhook/whatsapp").send(payload);
+
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("processado");
+    expect(response.body.id_externo).toBe(idExterno);
+
+    const [rows] = await db.query(
+      `SELECT id_externo, empresa_id, telefone_origem, status_processamento
+       FROM whatsapp_eventos
+       WHERE id_externo = ?
+       LIMIT 1`,
+      [idExterno],
+    );
+
+    expect(rows.length).toBe(1);
+    expect(rows[0].id_externo).toBe(idExterno);
+    expect(Number(rows[0].empresa_id)).toBe(1);
+    expect(rows[0].telefone_origem).toBe("5511999999999");
+    expect(rows[0].status_processamento).toBe("processado");
+  });
+
+  test("9.4 evento duplicado não gera novo processamento", async () => {
+    const idExterno = `${TEST_PREFIX}-WA-DUP-${Date.now()}`;
+    const payload = {
+      empresa_id: 1,
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                messages: [
+                  {
+                    id: idExterno,
+                    from: "5511888888888",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const primeira = await request(app).post("/webhook/whatsapp").send(payload);
+    const duplicada = await request(app)
+      .post("/webhook/whatsapp")
+      .send(payload);
+
+    expect(primeira.status).toBe(200);
+    expect(primeira.body.status).toBe("processado");
+    expect(duplicada.status).toBe(200);
+    expect(duplicada.body.status).toBe("duplicado");
+
+    const [countRows] = await db.query(
+      "SELECT COUNT(*) AS total FROM whatsapp_eventos WHERE id_externo = ?",
+      [idExterno],
+    );
+
+    const [statusRows] = await db.query(
+      "SELECT status_processamento FROM whatsapp_eventos WHERE id_externo = ? LIMIT 1",
+      [idExterno],
+    );
+
+    expect(countRows[0].total).toBe(1);
+    expect(statusRows[0].status_processamento).toBe("duplicado");
+  });
+
+  test("9.5 payload inválido retorna 400 e registra auditoria", async () => {
+    const payloadInvalido = {
+      entry: [
+        {
+          changes: [
+            {
+              value: {
+                messages: [
+                  {
+                    from: "5511777777777",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const response = await request(app)
+      .post("/webhook/whatsapp")
+      .send(payloadInvalido);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("payload inválido");
+
+    const [rows] = await db.query(
+      `SELECT status_processamento, telefone_origem
+       FROM whatsapp_eventos
+       WHERE status_processamento = 'invalido'
+         AND telefone_origem = ?
+       ORDER BY id DESC
+       LIMIT 1`,
+      ["5511777777777"],
+    );
+
+    expect(rows.length).toBe(1);
+    expect(rows[0].status_processamento).toBe("invalido");
+    expect(rows[0].telefone_origem).toBe("5511777777777");
+  });
+});

@@ -5,6 +5,7 @@ const estoqueRoutes = require("./routes/estoqueRoutes");
 const pedidoRoutes = require("./routes/pedidoRoutes");
 const configuracaoRoutes = require("./routes/configuracaoRoutes");
 const authRoutes = require("./routes/authRoutes");
+const webhookRoutes = require("./routes/webhookRoutes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/webhook/whatsapp", webhookRoutes);
 
 app.use("/empresas/:empresaId/produtos", produtoRoutes);
 app.use("/empresas/:empresaId/estoque", estoqueRoutes);
