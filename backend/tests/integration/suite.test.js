@@ -1,4 +1,5 @@
 const request = require("supertest");
+const jwt = require("jsonwebtoken");
 const app = require("../../src/app");
 const {
   db,
@@ -58,6 +59,15 @@ async function patchEstoque(token, produtoId, payload, empresaId = 1) {
 
 async function createPedido(empresaId, payload) {
   return request(app).post(`/empresas/${empresaId}/pedidos`).send(payload);
+}
+
+function buildSuperadminToken({ userId = 9999 } = {}) {
+  const secret = process.env.JWT_SECRET || "test_secret_jwt";
+
+  return jwt.sign({ empresa_id: 1, perfil: "superadmin" }, secret, {
+    subject: String(userId),
+    expiresIn: "1h",
+  });
 }
 
 beforeAll(async () => {
@@ -273,6 +283,15 @@ describe("PASSO 4 - Pedidos + transação", () => {
     });
     return created.body.id;
   }
+
+  test("4.0 criação de pedido permanece pública (sem token)", async () => {
+    const token = await getTokenEmpresa1();
+    const produtoId = await prepararProdutoComEstoque(token, 100);
+
+    const response = await createPedido(1, buildPedidoPayload(produtoId));
+
+    expect(response.status).toBe(201);
+  });
 
   test("4.1 cria pedido entrega válido", async () => {
     const token = await getTokenEmpresa1();
@@ -522,7 +541,7 @@ describe("PASSO 5 - Status de pedido", () => {
     expect(response.status).toBe(404);
   });
 
-  test("5.8 empresa diferente retorna 404 ou 403", async () => {
+  test("5.8 empresa diferente sem permissão retorna 403", async () => {
     const { pedidoId } = await criarPedidoPendente();
     const tokenEmpresa2 = await getTokenEmpresa2();
 
@@ -531,7 +550,7 @@ describe("PASSO 5 - Status de pedido", () => {
       .set(authHeader(tokenEmpresa2))
       .send({ status: "em_preparo" });
 
-    expect([403, 404]).toContain(response.status);
+    expect(response.status).toBe(403);
   });
 });
 
@@ -693,14 +712,24 @@ describe("PASSO 7 - Configurações da empresa", () => {
     ]);
   });
 
-  test("7.2 empresa inexistente retorna 404", async () => {
+  test("7.2 rota protegida sem permissão retorna 403", async () => {
     const token = await getTokenEmpresa1();
 
     const response = await request(app)
       .get("/empresas/999999/configuracoes")
       .set(authHeader(token));
 
-    expect([403, 404]).toContain(response.status);
+    expect(response.status).toBe(403);
+  });
+
+  test("7.9 com permissão e empresa inexistente retorna 404", async () => {
+    const superadminToken = buildSuperadminToken();
+
+    const response = await request(app)
+      .get("/empresas/999999/configuracoes")
+      .set(authHeader(superadminToken));
+
+    expect(response.status).toBe(404);
   });
 
   test("7.3 atualiza taxa_entrega", async () => {
@@ -848,6 +877,7 @@ describe("PASSO 8 - Auth + JWT", () => {
       .send(buildProdutoPayload());
 
     expect(response.status).toBe(401);
+    expect(response.body.error).toBe("token inválido ou expirado");
   });
 
   test("8.10 token expirado retorna 401", async () => {
@@ -859,6 +889,7 @@ describe("PASSO 8 - Auth + JWT", () => {
       .send(buildProdutoPayload());
 
     expect(response.status).toBe(401);
+    expect(response.body.error).toBe("token inválido ou expirado");
   });
 
   test("8.11 token de outra empresa retorna 403 no status do pedido", async () => {
