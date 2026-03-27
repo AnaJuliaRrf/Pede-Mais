@@ -1,6 +1,7 @@
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const app = require("../../src/app");
+const pedidoModel = require("../../src/models/pedidoModel");
 const {
   db,
   TEST_PREFIX,
@@ -418,6 +419,109 @@ describe("PASSO 4 - Pedidos + transação", () => {
 
     expect(estoqueResponse.status).toBe(200);
     expect(item.quantidade).toBe(98);
+  });
+
+  test("4.7 rollback completo quando falha após inserir pedido e itens", async () => {
+    const token = await getTokenEmpresa1();
+    const produtoId = await prepararProdutoComEstoque(token, 10);
+    const clienteNome = `${TEST_PREFIX} Rollback Intermediario`;
+
+    const [beforePedido] = await db.query(
+      "SELECT COUNT(*) AS total FROM pedidos WHERE cliente_nome = ?",
+      [clienteNome],
+    );
+    const [beforeItens] = await db.query(
+      "SELECT COUNT(*) AS total FROM itens_pedido WHERE produto_id = ?",
+      [produtoId],
+    );
+    const [beforeEstoqueRows] = await db.query(
+      "SELECT quantidade FROM estoque WHERE produto_id = ? LIMIT 1",
+      [produtoId],
+    );
+
+    const estoqueAntes = Number(beforeEstoqueRows[0]?.quantidade ?? 0);
+
+    const spyBaixaEstoque = jest
+      .spyOn(pedidoModel, "baixarEstoque")
+      .mockImplementationOnce(async () => {
+        throw new Error("falha intermediaria simulada");
+      });
+
+    try {
+      const response = await createPedido(
+        1,
+        buildPedidoPayload(produtoId, { cliente_nome: clienteNome }),
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe("erro interno do servidor");
+    } finally {
+      spyBaixaEstoque.mockRestore();
+    }
+
+    const [afterPedido] = await db.query(
+      "SELECT COUNT(*) AS total FROM pedidos WHERE cliente_nome = ?",
+      [clienteNome],
+    );
+    const [afterItens] = await db.query(
+      "SELECT COUNT(*) AS total FROM itens_pedido WHERE produto_id = ?",
+      [produtoId],
+    );
+    const [afterEstoqueRows] = await db.query(
+      "SELECT quantidade FROM estoque WHERE produto_id = ? LIMIT 1",
+      [produtoId],
+    );
+
+    const estoqueDepois = Number(afterEstoqueRows[0]?.quantidade ?? 0);
+
+    expect(afterPedido[0].total).toBe(beforePedido[0].total);
+    expect(afterItens[0].total).toBe(beforeItens[0].total);
+    expect(estoqueDepois).toBe(estoqueAntes);
+  });
+
+  test("4.8 concorrencia no mesmo estoque evita over-selling", async () => {
+    const token = await getTokenEmpresa1();
+    const produtoId = await prepararProdutoComEstoque(token, 1);
+
+    const payloadA = buildPedidoPayload(produtoId, {
+      cliente_nome: `${TEST_PREFIX} Concorrencia A`,
+      itens: [{ produto_id: produtoId, quantidade: 1 }],
+    });
+    const payloadB = buildPedidoPayload(produtoId, {
+      cliente_nome: `${TEST_PREFIX} Concorrencia B`,
+      itens: [{ produto_id: produtoId, quantidade: 1 }],
+    });
+
+    const [responseA, responseB] = await Promise.all([
+      createPedido(1, payloadA),
+      createPedido(1, payloadB),
+    ]);
+
+    const statusOrdenados = [responseA.status, responseB.status].sort(
+      (a, b) => a - b,
+    );
+    expect(statusOrdenados).toEqual([201, 400]);
+
+    const falha = [responseA, responseB].find(
+      (response) => response.status === 400,
+    );
+    expect(falha.body.error).toContain("estoque insuficiente");
+
+    const [estoqueRows] = await db.query(
+      "SELECT quantidade FROM estoque WHERE produto_id = ? LIMIT 1",
+      [produtoId],
+    );
+    const estoqueFinal = Number(estoqueRows[0]?.quantidade ?? 0);
+
+    expect(estoqueFinal).toBe(0);
+    expect(estoqueFinal).toBeGreaterThanOrEqual(0);
+
+    const [pedidoCountRows] = await db.query(
+      "SELECT COUNT(*) AS total FROM pedidos WHERE cliente_nome IN (?, ?)",
+      [payloadA.cliente_nome, payloadB.cliente_nome],
+    );
+
+    expect(pedidoCountRows[0].total).toBe(1);
   });
 });
 
