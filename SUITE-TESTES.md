@@ -95,6 +95,10 @@ Use `empresa_id = 1`
 
 **Pré-requisito**: Produto com qty=100 e preço=45.50
 
+### 4.0 - POST /empresas/1/pedidos (público, sem token)
+
+- Esperado: 201 (criação de pedido permanece pública)
+
 ### 4.1 - POST /empresas/1/pedidos (entrega válida)
 
 ```json
@@ -187,7 +191,7 @@ Use `empresa_id = 1`
 ### 5.8 - Empresa diferente
 
 - URL: /empresas/999/pedidos/{id_empresa_1}/status
-- Esperado: 404 ou 403
+- Esperado: 403 (token válido, sem permissão para empresa da rota)
 
 ---
 
@@ -231,11 +235,15 @@ Use `empresa_id = 1`
 
 ### 7.1 - GET /empresas/1/configuracoes
 
-- Esperado: 200, { id, aceita_entrega, aceita_retirada, taxa_entrega, telefone, endereco, horario_abertura, horario_fechamento, formas_pagamento_aceitas }
+- Esperado: 200, { empresa_id, aceita_entrega, aceita_retirada, taxa_entrega, telefone, endereco, horario_abertura, horario_fechamento, formas_pagamento_aceitas }
 
 ### 7.2 - GET /empresas/999/configuracoes
 
-- Esperado: 404
+- Esperado: 403 (rota protegida sem permissão)
+
+### 7.9 - GET /empresas/999999/configuracoes (com permissão superadmin)
+
+- Esperado: 404 (com permissão para acessar a empresa da rota, mas empresa inexistente)
 
 ### 7.3 - PATCH /empresas/1/configuracoes
 
@@ -318,12 +326,12 @@ Use `empresa_id = 1`
 ### 8.9 - POST /empresas/1/produtos (token fake)
 
 - Header: Authorization: Bearer token_fake_xyz
-- Esperado: 401
+- Esperado: 401, error: "token inválido ou expirado"
 
 ### 8.10 - POST /empresas/1/produtos (token expirado)
 
 - Nota: Precisa de token vencido, ignore se não conseguir simular
-- Esperado: 401
+- Esperado: 401, error: "token inválido ou expirado"
 
 ### 8.11 - PATCH /empresas/1/pedidos/{id}/status (token de outra empresa)
 
