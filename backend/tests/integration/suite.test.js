@@ -1561,3 +1561,502 @@ describe("PASSO 10 - Máquina de estados WhatsApp (MVP)", () => {
     expect(e2nome.body.resposta).toContain("Cardápio");
   });
 });
+
+describe("PASSO 11 - WhatsApp segunda metade (MVP)", () => {
+  async function enviarMensagemWebhook({ empresaId, telefone, texto, sufixo }) {
+    const idExterno = `${TEST_PREFIX}-WA-MVP2-${telefone}-${sufixo}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const payload = buildWebhookPayload({
+      idExterno,
+      empresaId,
+      telefone,
+      texto,
+    });
+
+    return request(app).post("/webhook/whatsapp").send(payload);
+  }
+
+  async function prepararMenuEmpresa(empresaId = 1) {
+    const token =
+      empresaId === 1 ? await getTokenEmpresa1() : await getTokenEmpresa2();
+
+    await createProdutoAutenticado(token, empresaId, {
+      nome: `${TEST_PREFIX} M2 Menu 1 E${empresaId}`,
+      preco: 12,
+      categoria: TEST_CATEGORY,
+      ativo: true,
+    });
+
+    await createProdutoAutenticado(token, empresaId, {
+      nome: `${TEST_PREFIX} M2 Menu 2 E${empresaId}`,
+      preco: 18,
+      categoria: TEST_CATEGORY,
+      ativo: true,
+    });
+  }
+
+  async function configurarEmpresa(empresaId, payload) {
+    const token =
+      empresaId === 1 ? await getTokenEmpresa1() : await getTokenEmpresa2();
+
+    return request(app)
+      .patch(`/empresas/${empresaId}/configuracoes`)
+      .set(authHeader(token))
+      .send(payload);
+  }
+
+  async function irAteProntoParaConfirmacao(empresaId, telefone) {
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "Oi",
+      sufixo: "a0",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "Cliente",
+      sufixo: "a1",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "1",
+      sufixo: "a2",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "2",
+      sufixo: "a3",
+    });
+    const fimCarrinho = await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "2",
+      sufixo: "a4",
+    });
+
+    expect(fimCarrinho.status).toBe(200);
+    expect(fimCarrinho.body.estado_atual).toBe("pronto_para_confirmacao");
+  }
+
+  test("11.1 fluxo entrega completo até pronto_para_criar_pedido com troco", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+    const telefone = "5511997000001";
+
+    await irAteProntoParaConfirmacao(1, telefone);
+
+    const recebimento = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "ok",
+      sufixo: "b0",
+    });
+    expect(recebimento.body.estado_atual).toBe("aguardando_tipo_recebimento");
+
+    const entrega = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "b1",
+    });
+    expect(entrega.body.estado_atual).toBe("aguardando_endereco_entrega");
+
+    const endereco = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Rua A, 100",
+      sufixo: "b2",
+    });
+    expect(endereco.body.estado_atual).toBe("aguardando_confirmacao_endereco");
+
+    const confirmaEndereco = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "b3",
+    });
+    expect(confirmaEndereco.body.estado_atual).toBe(
+      "aguardando_forma_pagamento",
+    );
+
+    const pagamento = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "b4",
+    });
+    expect(pagamento.body.estado_atual).toBe("aguardando_necessidade_troco");
+
+    const precisaTroco = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "b5",
+    });
+    expect(precisaTroco.body.estado_atual).toBe("aguardando_troco_para");
+
+    const troco = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "50",
+      sufixo: "b6",
+    });
+    expect(troco.body.estado_atual).toBe("pronto_para_criar_pedido");
+    expect(troco.body.resposta).toContain("Forma de recebimento: entrega");
+    expect(troco.body.resposta).toContain("Troco para: R$ 50.00");
+  });
+
+  test("11.2 fluxo retirada completo até pronto_para_criar_pedido sem endereço", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+    const telefone = "5511997000002";
+
+    await irAteProntoParaConfirmacao(1, telefone);
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "ok",
+      sufixo: "c0",
+    });
+
+    const retirada = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "c1",
+    });
+    expect(retirada.body.estado_atual).toBe("aguardando_forma_pagamento");
+
+    const pagamento = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "c2",
+    });
+    expect(pagamento.body.estado_atual).toBe("pronto_para_criar_pedido");
+    expect(pagamento.body.resposta).toContain("Forma de recebimento: retirada");
+    expect(pagamento.body.resposta).not.toContain("Endereço:");
+  });
+
+  test("11.3 empresa apenas entrega", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, {
+      aceita_entrega: true,
+      aceita_retirada: false,
+    });
+    const telefone = "5511997000003";
+
+    await irAteProntoParaConfirmacao(1, telefone);
+
+    const avancar = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "ok",
+      sufixo: "d0",
+    });
+    expect(avancar.body.estado_atual).toBe("aguardando_endereco_entrega");
+    expect(avancar.body.resposta).toContain(
+      "empresa atende somente por entrega",
+    );
+  });
+
+  test("11.4 empresa apenas retirada", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, {
+      aceita_entrega: false,
+      aceita_retirada: true,
+    });
+    const telefone = "5511997000004";
+
+    await irAteProntoParaConfirmacao(1, telefone);
+
+    const avancar = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "ok",
+      sufixo: "e0",
+    });
+    expect(avancar.body.estado_atual).toBe("aguardando_forma_pagamento");
+    expect(avancar.body.resposta).toContain("empresa atende somente retirada");
+  });
+
+  test("11.5 endereço inválido e correção com confirmação", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+    const telefone = "5511997000005";
+
+    await irAteProntoParaConfirmacao(1, telefone);
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "ok",
+      sufixo: "f0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "f1",
+    });
+
+    const enderecoVazio = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "   ",
+      sufixo: "f2",
+    });
+    expect(enderecoVazio.body.estado_atual).toBe("aguardando_endereco_entrega");
+    expect(enderecoVazio.body.resposta).toContain("Endereço inválido");
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Rua B, 200",
+      sufixo: "f3",
+    });
+    const alterar = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "f4",
+    });
+    expect(alterar.body.estado_atual).toBe("aguardando_endereco_entrega");
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Rua C, 300",
+      sufixo: "f5",
+    });
+    const confirma = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "f6",
+    });
+    expect(confirma.body.estado_atual).toBe("aguardando_forma_pagamento");
+  });
+
+  test("11.6 pagamento não permitido pela empresa", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+    const telefone = "5511997000006";
+
+    await irAteProntoParaConfirmacao(1, telefone);
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "ok",
+      sufixo: "g0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "g1",
+    });
+
+    const invalido = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "9",
+      sufixo: "g2",
+    });
+    expect(invalido.body.estado_atual).toBe("aguardando_forma_pagamento");
+    expect(invalido.body.resposta).toContain("Forma de pagamento inválida");
+  });
+
+  test("11.7 fluxo dinheiro com troco sim e não", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefoneTroco = "5511997000007";
+    await irAteProntoParaConfirmacao(1, telefoneTroco);
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneTroco,
+      texto: "ok",
+      sufixo: "h0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneTroco,
+      texto: "2",
+      sufixo: "h1",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneTroco,
+      texto: "1",
+      sufixo: "h2",
+    });
+    const semTroco = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneTroco,
+      texto: "2",
+      sufixo: "h3",
+    });
+    expect(semTroco.body.estado_atual).toBe("pronto_para_criar_pedido");
+    expect(semTroco.body.resposta).toContain("Troco: não");
+
+    const telefoneComTroco = "5511997000008";
+    await irAteProntoParaConfirmacao(1, telefoneComTroco);
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneComTroco,
+      texto: "ok",
+      sufixo: "h4",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneComTroco,
+      texto: "2",
+      sufixo: "h5",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneComTroco,
+      texto: "1",
+      sufixo: "h6",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneComTroco,
+      texto: "1",
+      sufixo: "h7",
+    });
+    const comTroco = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneComTroco,
+      texto: "80",
+      sufixo: "h8",
+    });
+    expect(comTroco.body.estado_atual).toBe("pronto_para_criar_pedido");
+    expect(comTroco.body.resposta).toContain("Troco para: R$ 80.00");
+  });
+
+  test("11.8 isolamento por empresa e telefone", async () => {
+    await prepararMenuEmpresa(1);
+    await prepararMenuEmpresa(2);
+
+    const t1 = "5511997000009";
+    const t2 = "5511997000010";
+
+    await irAteProntoParaConfirmacao(1, t1);
+    await irAteProntoParaConfirmacao(2, t1);
+    await irAteProntoParaConfirmacao(1, t2);
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: t1,
+      texto: "ok",
+      sufixo: "i0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 2,
+      telefone: t1,
+      texto: "ok",
+      sufixo: "i1",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: t2,
+      texto: "ok",
+      sufixo: "i2",
+    });
+
+    const [rows] = await db.query(
+      `SELECT empresa_id, telefone_origem, estado_atual
+       FROM whatsapp_sessoes
+       WHERE telefone_origem IN (?, ?)
+       ORDER BY empresa_id, telefone_origem`,
+      [t1, t2],
+    );
+
+    expect(rows.length).toBe(3);
+    expect(
+      rows.some((r) => Number(r.empresa_id) === 1 && r.telefone_origem === t1),
+    ).toBe(true);
+    expect(
+      rows.some((r) => Number(r.empresa_id) === 2 && r.telefone_origem === t1),
+    ).toBe(true);
+    expect(
+      rows.some((r) => Number(r.empresa_id) === 1 && r.telefone_origem === t2),
+    ).toBe(true);
+  });
+
+  test("11.9 reentrada após estados críticos", async () => {
+    await prepararMenuEmpresa(1);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+    const telefone = "5511997000011";
+
+    await irAteProntoParaConfirmacao(1, telefone);
+
+    const s1 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "ok",
+      sufixo: "j0",
+    });
+    expect(s1.body.estado_atual).toBe("aguardando_tipo_recebimento");
+
+    const s2 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "j1",
+    });
+    expect(s2.body.estado_atual).toBe("aguardando_endereco_entrega");
+
+    const s3 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Rua D, 400",
+      sufixo: "j2",
+    });
+    expect(s3.body.estado_atual).toBe("aguardando_confirmacao_endereco");
+
+    const s4 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "j3",
+    });
+    expect(s4.body.estado_atual).toBe("aguardando_forma_pagamento");
+
+    const s5 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "j4",
+    });
+    expect(s5.body.estado_atual).toBe("aguardando_necessidade_troco");
+
+    const s6 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "j5",
+    });
+    expect(s6.body.estado_atual).toBe("aguardando_troco_para");
+
+    const s7 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "120",
+      sufixo: "j6",
+    });
+    expect(s7.body.estado_atual).toBe("pronto_para_criar_pedido");
+
+    const s8 = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "qualquer",
+      sufixo: "j7",
+    });
+    expect(s8.body.estado_atual).toBe("pronto_para_criar_pedido");
+    expect(s8.body.resposta).toContain("Pré-resumo final");
+  });
+});

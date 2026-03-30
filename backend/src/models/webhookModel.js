@@ -1,5 +1,13 @@
 const db = require("../config/db");
 
+async function columnExists(tableName, columnName) {
+  const [rows] = await db.query(`SHOW COLUMNS FROM ${tableName} LIKE ?`, [
+    columnName,
+  ]);
+
+  return rows.length > 0;
+}
+
 async function ensureWebhookTable() {
   await db.query(
     `CREATE TABLE IF NOT EXISTS whatsapp_eventos (
@@ -25,15 +33,82 @@ async function ensureWebhookTable() {
         'aguardando_item_menu',
         'aguardando_quantidade_item',
         'aguardando_mais_itens',
-        'pronto_para_confirmacao'
+        'pronto_para_confirmacao',
+        'aguardando_tipo_recebimento',
+        'aguardando_endereco_entrega',
+        'aguardando_confirmacao_endereco',
+        'aguardando_forma_pagamento',
+        'aguardando_necessidade_troco',
+        'aguardando_troco_para',
+        'pronto_para_criar_pedido'
       ) NOT NULL,
       nome_cliente VARCHAR(191) NULL,
       item_menu_pendente BIGINT NULL,
+      tipo_recebimento ENUM('entrega', 'retirada') NULL,
+      endereco TEXT NULL,
+      endereco_confirmado TINYINT(1) NULL,
+      forma_pagamento VARCHAR(32) NULL,
+      precisa_troco TINYINT(1) NULL,
+      troco_para DECIMAL(10,2) NULL,
       criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       UNIQUE KEY uq_whatsapp_sessoes_empresa_telefone (empresa_id, telefone_origem)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+
+  await db.query(
+    `ALTER TABLE whatsapp_sessoes
+     MODIFY COLUMN estado_atual ENUM(
+       'aguardando_nome',
+       'aguardando_item_menu',
+       'aguardando_quantidade_item',
+       'aguardando_mais_itens',
+       'pronto_para_confirmacao',
+       'aguardando_tipo_recebimento',
+       'aguardando_endereco_entrega',
+       'aguardando_confirmacao_endereco',
+       'aguardando_forma_pagamento',
+       'aguardando_necessidade_troco',
+       'aguardando_troco_para',
+       'pronto_para_criar_pedido'
+     ) NOT NULL`,
+  );
+
+  if (!(await columnExists("whatsapp_sessoes", "tipo_recebimento"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN tipo_recebimento ENUM('entrega', 'retirada') NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "endereco"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN endereco TEXT NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "endereco_confirmado"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN endereco_confirmado TINYINT(1) NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "forma_pagamento"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN forma_pagamento VARCHAR(32) NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "precisa_troco"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN precisa_troco TINYINT(1) NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "troco_para"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN troco_para DECIMAL(10,2) NULL",
+    );
+  }
 
   await db.query(
     `CREATE TABLE IF NOT EXISTS whatsapp_carrinho_tmp (
@@ -115,6 +190,12 @@ async function findSessaoByEmpresaTelefone(empresaId, telefoneOrigem) {
       estado_atual,
       nome_cliente,
       item_menu_pendente,
+      tipo_recebimento,
+      endereco,
+      endereco_confirmado,
+      forma_pagamento,
+      precisa_troco,
+      troco_para,
       criado_em,
       atualizado_em
      FROM whatsapp_sessoes

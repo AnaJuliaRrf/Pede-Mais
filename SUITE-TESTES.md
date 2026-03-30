@@ -427,6 +427,61 @@ Use `empresa_id = 1`
 
 ---
 
+## ✅ PASSO 11: WhatsApp segunda metade do fluxo (9 testes)
+
+### 11.1 - Entrega completa até `pronto_para_criar_pedido`
+
+- Após `pronto_para_confirmacao`, avançar para recebimento
+- Escolher entrega, informar endereço, confirmar endereço, escolher dinheiro, informar troco
+- Esperado: estado final `pronto_para_criar_pedido` com pré-resumo final
+
+### 11.2 - Retirada completa até `pronto_para_criar_pedido`
+
+- Escolher retirada e forma de pagamento não dinheiro
+- Esperado: estado final `pronto_para_criar_pedido` sem endereço no resumo
+
+### 11.3 - Empresa apenas entrega
+
+- Configuração: `aceita_entrega=true`, `aceita_retirada=false`
+- Esperado: após confirmação do carrinho, seguir direto para endereço
+
+### 11.4 - Empresa apenas retirada
+
+- Configuração: `aceita_entrega=false`, `aceita_retirada=true`
+- Esperado: após confirmação do carrinho, seguir direto para forma de pagamento
+
+### 11.5 - Endereço inválido e correção
+
+- Endereço vazio deve manter estado `aguardando_endereco_entrega`
+- Em confirmação, opção `2` deve permitir editar endereço
+
+### 11.6 - Pagamento não permitido
+
+- Opção inválida em `aguardando_forma_pagamento`
+- Esperado: mensagem guiada e permanência no estado
+
+### 11.7 - Dinheiro com troco sim e não
+
+- Caminho `troco=não` vai direto para `pronto_para_criar_pedido`
+- Caminho `troco=sim` exige valor e só então avança
+
+### 11.8 - Isolamento por empresa e telefone
+
+- Fluxos paralelos por `(empresa_id, telefone)` não se misturam
+
+### 11.9 - Reentrada após estados críticos
+
+- Retomada determinística em cada estado novo:
+  `aguardando_tipo_recebimento`,
+  `aguardando_endereco_entrega`,
+  `aguardando_confirmacao_endereco`,
+  `aguardando_forma_pagamento`,
+  `aguardando_necessidade_troco`,
+  `aguardando_troco_para`,
+  `pronto_para_criar_pedido`
+
+---
+
 ## 📌 COMO USAR
 
 No Thunder Client, organize em pastas:
