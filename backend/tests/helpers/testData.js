@@ -228,6 +228,32 @@ async function cleanupTestData() {
   await db.query("DELETE FROM usuarios WHERE email LIKE ?", [
     `%@itest.pedemais.local`,
   ]);
+
+  const [webhookTable] = await db.query("SHOW TABLES LIKE 'whatsapp_eventos'");
+  if (webhookTable.length) {
+    await db.query(
+      "DELETE FROM whatsapp_eventos WHERE telefone_origem LIKE ?",
+      ["5511%"],
+    );
+    await db.query("DELETE FROM whatsapp_eventos WHERE id_externo LIKE ?", [
+      `${TEST_PREFIX}%`,
+    ]);
+  }
+
+  const [sessaoTable] = await db.query("SHOW TABLES LIKE 'whatsapp_sessoes'");
+  if (sessaoTable.length) {
+    await db.query(
+      "DELETE FROM whatsapp_sessoes WHERE telefone_origem LIKE ?",
+      ["5511%"],
+    );
+  }
+
+  const [carrinhoTable] = await db.query(
+    "SHOW TABLES LIKE 'whatsapp_carrinho_tmp'",
+  );
+  if (carrinhoTable.length) {
+    await db.query("DELETE FROM whatsapp_carrinho_tmp");
+  }
 }
 
 module.exports = {

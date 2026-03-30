@@ -42,6 +42,29 @@ function buildPedidoPayload(produtoId, overrides = {}) {
   };
 }
 
+function buildWebhookPayload({ idExterno, empresaId, telefone, texto }) {
+  return {
+    empresa_id: empresaId,
+    entry: [
+      {
+        changes: [
+          {
+            value: {
+              messages: [
+                {
+                  id: idExterno,
+                  from: telefone,
+                  text: { body: texto },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
 async function createProdutoAutenticado(token, empresaId = 1, overrides = {}) {
   const response = await request(app)
     .post(`/empresas/${empresaId}/produtos`)
@@ -1213,5 +1236,328 @@ describe("PASSO 9 - Webhook WhatsApp (fundação)", () => {
     expect(rows.length).toBe(1);
     expect(rows[0].status_processamento).toBe("invalido");
     expect(rows[0].telefone_origem).toBe("5511777777777");
+  });
+});
+
+describe("PASSO 10 - Máquina de estados WhatsApp (MVP)", () => {
+  async function enviarMensagemWebhook({ empresaId, telefone, texto, sufixo }) {
+    const idExterno = `${TEST_PREFIX}-WA-MVP-${telefone}-${sufixo}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const payload = buildWebhookPayload({
+      idExterno,
+      empresaId,
+      telefone,
+      texto,
+    });
+
+    return request(app).post("/webhook/whatsapp").send(payload);
+  }
+
+  async function prepararMenuEmpresa(empresaId = 1) {
+    const token =
+      empresaId === 1 ? await getTokenEmpresa1() : await getTokenEmpresa2();
+
+    const p1 = await createProdutoAutenticado(token, empresaId, {
+      nome: `${TEST_PREFIX} Menu 1 E${empresaId}`,
+      preco: 10,
+      categoria: TEST_CATEGORY,
+      ativo: true,
+    });
+
+    const p2 = await createProdutoAutenticado(token, empresaId, {
+      nome: `${TEST_PREFIX} Menu 2 E${empresaId}`,
+      preco: 15,
+      categoria: TEST_CATEGORY,
+      ativo: true,
+    });
+
+    return { p1: p1.body, p2: p2.body };
+  }
+
+  test("10.1 fluxo feliz até pronto_para_confirmacao", async () => {
+    await prepararMenuEmpresa(1);
+    const telefone = "5511991111111";
+
+    const inicio = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Oi",
+      sufixo: "inicio",
+    });
+    expect(inicio.status).toBe(200);
+    expect(inicio.body.estado_atual).toBe("aguardando_nome");
+
+    const nome = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Maria",
+      sufixo: "nome",
+    });
+    expect(nome.status).toBe(200);
+    expect(nome.body.estado_atual).toBe("aguardando_item_menu");
+    expect(nome.body.resposta).toContain("Cardápio");
+
+    const item = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "item",
+    });
+    expect(item.status).toBe(200);
+    expect(item.body.estado_atual).toBe("aguardando_quantidade_item");
+
+    const quantidade = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "quantidade",
+    });
+    expect(quantidade.status).toBe(200);
+    expect(quantidade.body.estado_atual).toBe("aguardando_mais_itens");
+
+    const finalizar = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "fim",
+    });
+    expect(finalizar.status).toBe(200);
+    expect(finalizar.body.estado_atual).toBe("pronto_para_confirmacao");
+    expect(finalizar.body.resposta).toContain("Pré-resumo");
+
+    const [sessaoRows] = await db.query(
+      `SELECT estado_atual, nome_cliente
+       FROM whatsapp_sessoes
+       WHERE empresa_id = ? AND telefone_origem = ?
+       LIMIT 1`,
+      [1, telefone],
+    );
+    expect(sessaoRows.length).toBe(1);
+    expect(sessaoRows[0].estado_atual).toBe("pronto_para_confirmacao");
+    expect(sessaoRows[0].nome_cliente).toBe("Maria");
+
+    const [carrinhoRows] = await db.query(
+      `SELECT SUM(quantidade) AS total_qtd
+       FROM whatsapp_carrinho_tmp c
+       INNER JOIN whatsapp_sessoes s ON s.id = c.sessao_id
+       WHERE s.empresa_id = ? AND s.telefone_origem = ?`,
+      [1, telefone],
+    );
+    expect(Number(carrinhoRows[0].total_qtd)).toBe(2);
+  });
+
+  test("10.2 item inválido no menu mantém contexto", async () => {
+    await prepararMenuEmpresa(1);
+    const telefone = "5511992222222";
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Oi",
+      sufixo: "s0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Joao",
+      sufixo: "s1",
+    });
+
+    const invalido = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "99",
+      sufixo: "s2",
+    });
+
+    expect(invalido.status).toBe(200);
+    expect(invalido.body.estado_atual).toBe("aguardando_item_menu");
+    expect(invalido.body.resposta).toContain("Item inválido");
+  });
+
+  test("10.3 quantidade inválida mantém contexto", async () => {
+    await prepararMenuEmpresa(1);
+    const telefone = "5511993333333";
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Oi",
+      sufixo: "q0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Ana",
+      sufixo: "q1",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "q2",
+    });
+
+    const invalido = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "abc",
+      sufixo: "q3",
+    });
+
+    expect(invalido.status).toBe(200);
+    expect(invalido.body.estado_atual).toBe("aguardando_quantidade_item");
+    expect(invalido.body.resposta).toContain("Quantidade inválida");
+  });
+
+  test("10.4 opção inválida no mais_itens mantém contexto", async () => {
+    await prepararMenuEmpresa(1);
+    const telefone = "5511994444444";
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Oi",
+      sufixo: "m0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Bia",
+      sufixo: "m1",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "m2",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "m3",
+    });
+
+    const invalido = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "9",
+      sufixo: "m4",
+    });
+
+    expect(invalido.status).toBe(200);
+    expect(invalido.body.estado_atual).toBe("aguardando_mais_itens");
+    expect(invalido.body.resposta).toContain("Opção inválida");
+  });
+
+  test("10.5 reentrada com sessão existente retoma estado", async () => {
+    await prepararMenuEmpresa(1);
+    const telefone = "5511995555555";
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Oi",
+      sufixo: "r0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "Carlos",
+      sufixo: "r1",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "r2",
+    });
+
+    const retomada = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "r3",
+    });
+
+    expect(retomada.status).toBe(200);
+    expect(retomada.body.estado_atual).toBe("aguardando_mais_itens");
+    expect(retomada.body.resposta).toContain("Deseja adicionar mais itens");
+  });
+
+  test("10.6 isolamento por empresa e telefone", async () => {
+    await prepararMenuEmpresa(1);
+    await prepararMenuEmpresa(2);
+
+    const t1 = "5511996666661";
+    const t2 = "5511996666662";
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: t1,
+      texto: "Oi",
+      sufixo: "i0",
+    });
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: t1,
+      texto: "Nina",
+      sufixo: "i1",
+    });
+
+    await enviarMensagemWebhook({
+      empresaId: 2,
+      telefone: t1,
+      texto: "Oi",
+      sufixo: "i2",
+    });
+    const e2nome = await enviarMensagemWebhook({
+      empresaId: 2,
+      telefone: t1,
+      texto: "Otto",
+      sufixo: "i3",
+    });
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: t2,
+      texto: "Oi",
+      sufixo: "i4",
+    });
+
+    const [rows] = await db.query(
+      `SELECT empresa_id, telefone_origem, estado_atual, nome_cliente
+       FROM whatsapp_sessoes
+       WHERE telefone_origem IN (?, ?)
+       ORDER BY empresa_id, telefone_origem`,
+      [t1, t2],
+    );
+
+    expect(rows.length).toBe(3);
+    expect(
+      rows.some(
+        (r) =>
+          Number(r.empresa_id) === 1 &&
+          r.telefone_origem === t1 &&
+          r.nome_cliente === "Nina",
+      ),
+    ).toBe(true);
+    expect(
+      rows.some(
+        (r) =>
+          Number(r.empresa_id) === 2 &&
+          r.telefone_origem === t1 &&
+          r.nome_cliente === "Otto",
+      ),
+    ).toBe(true);
+    expect(
+      rows.some(
+        (r) =>
+          Number(r.empresa_id) === 1 &&
+          r.telefone_origem === t2 &&
+          r.estado_atual === "aguardando_nome",
+      ),
+    ).toBe(true);
+    expect(e2nome.body.resposta).toContain("Cardápio");
   });
 });

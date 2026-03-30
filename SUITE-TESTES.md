@@ -358,6 +358,75 @@ Use `empresa_id = 1`
 
 ---
 
+## ✅ PASSO 9: Webhook WhatsApp (fundação + idempotência) (5 testes)
+
+### 9.1 - GET /webhook/whatsapp (handshake válido)
+
+- Query: `hub.mode=subscribe`, `hub.verify_token={token_correto}`, `hub.challenge=12345`
+- Esperado: 200, body `12345`
+
+### 9.2 - GET /webhook/whatsapp (handshake inválido)
+
+- Query: `hub.mode=subscribe`, `hub.verify_token=token_invalido`, `hub.challenge=12345`
+- Esperado: 403, `error: "verificação inválida"`
+
+### 9.3 - POST /webhook/whatsapp (evento válido)
+
+- Esperado: 200, `status: "processado"`
+- Persistência mínima: `id_externo`, `empresa_id` (quando presente), `telefone_origem`, `payload_bruto`, `status_processamento`, timestamps
+
+### 9.4 - POST /webhook/whatsapp (evento duplicado)
+
+- Enviar o mesmo `id_externo` duas vezes
+- Esperado: segunda resposta com `status: "duplicado"`
+- Garantia: sem novo processamento e sem novo registro para o mesmo `id_externo`
+
+### 9.5 - POST /webhook/whatsapp (payload inválido)
+
+- Sem identificador único da mensagem/evento
+- Esperado: 400, `error: "payload inválido"`
+- Persistência: evento auditável com `status_processamento: "invalido"`
+
+---
+
+## ✅ PASSO 10: Máquina de estados WhatsApp (MVP seguro) (6 testes)
+
+### 10.1 - Fluxo feliz até `pronto_para_confirmacao`
+
+- Primeira mensagem inicia sessão em `aguardando_nome`
+- Nome válido avança para `aguardando_item_menu` com cardápio numerado
+- Item válido avança para `aguardando_quantidade_item`
+- Quantidade válida avança para `aguardando_mais_itens`
+- Opção `2` (não adicionar mais) avança para `pronto_para_confirmacao`
+- Esperado: pré-resumo do carrinho sem criar pedido definitivo
+
+### 10.2 - Item inválido no menu
+
+- Em `aguardando_item_menu`, enviar número inexistente
+- Esperado: mensagem guiada de erro e permanência em `aguardando_item_menu`
+
+### 10.3 - Quantidade inválida
+
+- Em `aguardando_quantidade_item`, enviar valor inválido
+- Esperado: mensagem guiada e permanência em `aguardando_quantidade_item`
+
+### 10.4 - Opção inválida no “mais itens”
+
+- Em `aguardando_mais_itens`, enviar opção diferente de `1` ou `2`
+- Esperado: mensagem guiada e permanência em `aguardando_mais_itens`
+
+### 10.5 - Reentrada com sessão existente
+
+- Com sessão ativa, próxima mensagem deve seguir estado persistido
+- Esperado: retomada determinística sem perder contexto
+
+### 10.6 - Isolamento por empresa e telefone
+
+- Sessões independentes para `(empresa_id, telefone)` distintos
+- Esperado: estados/carrinhos isolados sem contaminação cruzada
+
+---
+
 ## 📌 COMO USAR
 
 No Thunder Client, organize em pastas:

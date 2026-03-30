@@ -14,6 +14,40 @@ async function ensureWebhookTable() {
       UNIQUE KEY uq_whatsapp_eventos_id_externo (id_externo)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   );
+
+  await db.query(
+    `CREATE TABLE IF NOT EXISTS whatsapp_sessoes (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      empresa_id BIGINT NOT NULL,
+      telefone_origem VARCHAR(32) NOT NULL,
+      estado_atual ENUM(
+        'aguardando_nome',
+        'aguardando_item_menu',
+        'aguardando_quantidade_item',
+        'aguardando_mais_itens',
+        'pronto_para_confirmacao'
+      ) NOT NULL,
+      nome_cliente VARCHAR(191) NULL,
+      item_menu_pendente BIGINT NULL,
+      criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_whatsapp_sessoes_empresa_telefone (empresa_id, telefone_origem)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  );
+
+  await db.query(
+    `CREATE TABLE IF NOT EXISTS whatsapp_carrinho_tmp (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      sessao_id BIGINT NOT NULL,
+      produto_id BIGINT NOT NULL,
+      quantidade INT NOT NULL,
+      preco_unitario DECIMAL(10,2) NOT NULL,
+      criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_whatsapp_carrinho_item (sessao_id, produto_id),
+      KEY idx_whatsapp_carrinho_sessao (sessao_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  );
 }
 
 async function insertEvento({
@@ -72,9 +106,136 @@ async function findByIdExterno(idExterno) {
   return rows[0] || null;
 }
 
+async function findSessaoByEmpresaTelefone(empresaId, telefoneOrigem) {
+  const [rows] = await db.query(
+    `SELECT
+      id,
+      empresa_id,
+      telefone_origem,
+      estado_atual,
+      nome_cliente,
+      item_menu_pendente,
+      criado_em,
+      atualizado_em
+     FROM whatsapp_sessoes
+     WHERE empresa_id = ? AND telefone_origem = ?
+     LIMIT 1`,
+    [empresaId, telefoneOrigem],
+  );
+
+  return rows[0] || null;
+}
+
+async function createSessao({ empresa_id, telefone_origem, estado_atual }) {
+  const [result] = await db.query(
+    `INSERT INTO whatsapp_sessoes (
+      empresa_id,
+      telefone_origem,
+      estado_atual
+    ) VALUES (?, ?, ?)`,
+    [empresa_id, telefone_origem, estado_atual],
+  );
+
+  return result.insertId;
+}
+
+async function updateSessaoById(id, updates) {
+  const fields = Object.keys(updates || {});
+  if (!fields.length) {
+    return 0;
+  }
+
+  const setClause = fields.map((field) => `${field} = ?`).join(", ");
+  const values = fields.map((field) => updates[field]);
+
+  const [result] = await db.query(
+    `UPDATE whatsapp_sessoes
+     SET ${setClause}
+     WHERE id = ?`,
+    [...values, id],
+  );
+
+  return result.affectedRows;
+}
+
+async function clearCarrinhoBySessaoId(sessaoId) {
+  await db.query("DELETE FROM whatsapp_carrinho_tmp WHERE sessao_id = ?", [
+    sessaoId,
+  ]);
+}
+
+async function upsertCarrinhoItem({
+  sessao_id,
+  produto_id,
+  quantidade,
+  preco_unitario,
+}) {
+  await db.query(
+    `INSERT INTO whatsapp_carrinho_tmp (
+      sessao_id,
+      produto_id,
+      quantidade,
+      preco_unitario
+    ) VALUES (?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      quantidade = quantidade + VALUES(quantidade),
+      preco_unitario = VALUES(preco_unitario)`,
+    [sessao_id, produto_id, quantidade, preco_unitario],
+  );
+}
+
+async function listCarrinhoBySessaoId(sessaoId) {
+  const [rows] = await db.query(
+    `SELECT
+      c.produto_id,
+      p.nome AS produto_nome,
+      c.quantidade,
+      c.preco_unitario
+     FROM whatsapp_carrinho_tmp c
+     INNER JOIN produtos p ON p.id = c.produto_id
+     WHERE c.sessao_id = ?
+     ORDER BY c.id ASC`,
+    [sessaoId],
+  );
+
+  return rows;
+}
+
+async function listProdutosAtivosByEmpresa(empresaId) {
+  const [rows] = await db.query(
+    `SELECT id, nome, preco
+     FROM produtos
+     WHERE empresa_id = ? AND ativo = 1
+     ORDER BY id ASC`,
+    [empresaId],
+  );
+
+  return rows;
+}
+
+async function findProdutoAtivoByEmpresaAndId(empresaId, produtoId) {
+  const [rows] = await db.query(
+    `SELECT id, nome, preco
+     FROM produtos
+     WHERE empresa_id = ? AND id = ? AND ativo = 1
+     LIMIT 1`,
+    [empresaId, produtoId],
+  );
+
+  return rows[0] || null;
+}
+
 module.exports = {
   ensureWebhookTable,
   insertEvento,
   updateStatusByIdExterno,
   findByIdExterno,
+  findSessaoByEmpresaTelefone,
+  createSessao,
+  updateSessaoById,
+  clearCarrinhoBySessaoId,
+  upsertCarrinhoItem,
+  listCarrinhoBySessaoId,
+  listProdutosAtivosByEmpresa,
+  findProdutoAtivoByEmpresaAndId,
 };
