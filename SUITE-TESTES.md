@@ -535,6 +535,39 @@ Use `empresa_id = 1`
 
 ---
 
+## ✅ PASSO 13: Hardening de produção (5 testes)
+
+### 13.1 - Assinatura válida aceita evento
+
+- Com `WEBHOOK_SIGNING_SECRET` configurado
+- Enviar payload com header `x-hub-signature-256` válido
+- Esperado: 200, `status: "processado"`
+
+### 13.2 - Assinatura inválida rejeita evento
+
+- Com `WEBHOOK_SIGNING_SECRET` configurado
+- Enviar assinatura inválida
+- Esperado: 401, `error: "assinatura inválida"`, código padronizado
+
+### 13.3 - Rate limit bloqueia excesso
+
+- Configurar `WEBHOOK_RATE_LIMIT_MAX` baixo na janela
+- Estourar chamadas para mesma origem
+- Esperado: 429, `error: "limite de requisições excedido"`
+
+### 13.4 - Requisição dentro do limite segue funcional
+
+- Ainda com rate limit ativo
+- Chamadas abaixo do teto
+- Esperado: processamento normal (200)
+
+### 13.5 - Correlação e observabilidade mínima
+
+- Enviar `x-correlation-id`
+- Esperado: `correlation_id` no response + log estruturado com correlação
+
+---
+
 ## 📌 COMO USAR
 
 No Thunder Client, organize em pastas:

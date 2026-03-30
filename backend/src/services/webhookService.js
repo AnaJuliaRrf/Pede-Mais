@@ -1,6 +1,106 @@
 const webhookModel = require("../models/webhookModel");
 const configuracaoService = require("./configuracaoService");
 const pedidoModel = require("../models/pedidoModel");
+const crypto = require("crypto");
+
+const rateLimitState = new Map();
+
+function getVerifyToken() {
+  return (
+    process.env.WEBHOOK_VERIFY_TOKEN ||
+    process.env.WHATSAPP_VERIFY_TOKEN ||
+    "test_verify_token"
+  );
+}
+
+function getWebhookRateLimitConfig() {
+  const parsedWindow = Number(process.env.WEBHOOK_RATE_LIMIT_WINDOW_MS);
+  const parsedMax = Number(process.env.WEBHOOK_RATE_LIMIT_MAX);
+
+  const windowMs =
+    Number.isFinite(parsedWindow) && parsedWindow > 0 ? parsedWindow : 60000;
+  const max = Number.isFinite(parsedMax) && parsedMax > 0 ? parsedMax : 0;
+
+  return { windowMs, max };
+}
+
+function applyRateLimit(origin) {
+  const { windowMs, max } = getWebhookRateLimitConfig();
+  if (!max) {
+    return { blocked: false };
+  }
+
+  const now = Date.now();
+  const key = String(origin || "desconhecida");
+  const current = rateLimitState.get(key);
+
+  if (!current || current.resetAt <= now) {
+    rateLimitState.set(key, {
+      count: 1,
+      resetAt: now + windowMs,
+    });
+    return { blocked: false };
+  }
+
+  if (current.count >= max) {
+    return { blocked: true, retryAfterMs: current.resetAt - now };
+  }
+
+  current.count += 1;
+  rateLimitState.set(key, current);
+  return { blocked: false };
+}
+
+function timingSafeEqualsHex(expectedHex, receivedHex) {
+  const expected = Buffer.from(expectedHex, "hex");
+  const received = Buffer.from(receivedHex, "hex");
+
+  if (expected.length !== received.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expected, received);
+}
+
+function isValidSignature({ headers = {}, rawBody = "" }) {
+  const secret = process.env.WEBHOOK_SIGNING_SECRET;
+  if (!secret) {
+    return { valid: true, skipped: true };
+  }
+
+  const signatureHeaderRaw =
+    headers["x-hub-signature-256"] || headers["X-Hub-Signature-256"];
+
+  const signatureHeader =
+    typeof signatureHeaderRaw === "string" ? signatureHeaderRaw.trim() : "";
+
+  if (!signatureHeader.startsWith("sha256=")) {
+    return { valid: false };
+  }
+
+  const receivedHex = signatureHeader.replace("sha256=", "");
+  if (!/^[a-fA-F0-9]+$/.test(receivedHex)) {
+    return { valid: false };
+  }
+
+  const expectedHex = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody || "", "utf8")
+    .digest("hex");
+
+  return { valid: timingSafeEqualsHex(expectedHex, receivedHex) };
+}
+
+function logStructured(eventName, data = {}) {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    component: "webhook_whatsapp",
+    event: eventName,
+    ...data,
+  };
+
+  console.log(JSON.stringify(payload));
+}
 
 const ESTADOS = {
   AGUARDANDO_NOME: "aguardando_nome",
@@ -29,8 +129,7 @@ function verifyChallenge(query) {
   const challenge =
     typeof query["hub.challenge"] === "string" ? query["hub.challenge"] : "";
 
-  const expectedToken =
-    process.env.WHATSAPP_VERIFY_TOKEN || "test_verify_token";
+  const expectedToken = getVerifyToken();
 
   if (mode !== "subscribe" || !challenge || verifyToken !== expectedToken) {
     return { status: 403, error: "verificação inválida" };
@@ -962,11 +1061,61 @@ async function processarEstado(sessao, empresaId, textoMensagem) {
   return resetSessaoInconsistente(sessao.id);
 }
 
-async function receiveEvent(payload) {
+async function receiveEvent(payload, context = {}) {
+  const correlationId = context.correlationId || "sem_correlation_id";
+  const origin = context.origin || "desconhecida";
+
+  const rateLimit = applyRateLimit(origin);
+  if (rateLimit.blocked) {
+    logStructured("webhook_rate_limit_blocked", {
+      correlation_id: correlationId,
+      origin,
+      retry_after_ms: rateLimit.retryAfterMs,
+      status_processamento: "limite_excedido",
+    });
+
+    return {
+      status: 429,
+      code: "WEBHOOK_RATE_LIMIT_EXCEEDED",
+      error: "limite de requisições excedido",
+    };
+  }
+
+  const signatureCheck = isValidSignature({
+    headers: context.headers || {},
+    rawBody:
+      typeof context.rawBody === "string"
+        ? context.rawBody
+        : JSON.stringify(payload ?? null),
+  });
+
+  if (!signatureCheck.valid) {
+    logStructured("webhook_signature_invalid", {
+      correlation_id: correlationId,
+      origin,
+      status_processamento: "nao_autorizado",
+    });
+
+    return {
+      status: 401,
+      code: "WEBHOOK_UNAUTHORIZED",
+      error: "assinatura inválida",
+    };
+  }
+
   await webhookModel.ensureWebhookTable();
 
   const payloadBruto = JSON.stringify(payload ?? null);
   const extracted = extractEventData(payload);
+
+  logStructured("webhook_event_received", {
+    correlation_id: correlationId,
+    origin,
+    empresa_id: extracted.empresa_id ?? null,
+    telefone_origem: extracted.telefone_origem ?? null,
+    id_externo: extracted.id_externo ?? null,
+    status_processamento: "recebido",
+  });
 
   if (extracted.invalid) {
     await webhookModel.insertEvento({
@@ -977,7 +1126,22 @@ async function receiveEvent(payload) {
       status_processamento: "invalido",
     });
 
-    return { status: 400, error: "payload inválido" };
+    logStructured("webhook_event_result", {
+      correlation_id: correlationId,
+      origin,
+      empresa_id: extracted.empresa_id ?? null,
+      telefone_origem: extracted.telefone_origem ?? null,
+      id_externo: extracted.id_externo ?? null,
+      status_processamento: "invalido",
+      resultado: "erro",
+      code: "WEBHOOK_INVALID_PAYLOAD",
+    });
+
+    return {
+      status: 400,
+      code: "WEBHOOK_INVALID_PAYLOAD",
+      error: "payload inválido",
+    };
   }
 
   try {
@@ -999,6 +1163,7 @@ async function receiveEvent(payload) {
         status: 200,
         data: {
           status: "duplicado",
+          code: "WEBHOOK_DUPLICATE_EVENT",
           id_externo: extracted.id_externo,
         },
       };
@@ -1051,10 +1216,22 @@ async function receiveEvent(payload) {
     "processado",
   );
 
+  logStructured("webhook_event_result", {
+    correlation_id: correlationId,
+    origin,
+    empresa_id: extracted.empresa_id ?? null,
+    telefone_origem: extracted.telefone_origem ?? null,
+    id_externo: extracted.id_externo ?? null,
+    estado_atual: estadoAtual,
+    status_processamento: "processado",
+    resultado: "sucesso",
+  });
+
   return {
     status: 200,
     data: {
       status: "processado",
+      code: "WEBHOOK_PROCESSED",
       id_externo: extracted.id_externo,
       estado_atual: estadoAtual,
       resposta: respostaFluxo,
@@ -1065,4 +1242,7 @@ async function receiveEvent(payload) {
 module.exports = {
   verifyChallenge,
   receiveEvent,
+  __resetWebhookSecurityStateForTests() {
+    rateLimitState.clear();
+  },
 };

@@ -1,7 +1,9 @@
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const app = require("../../src/app");
 const pedidoModel = require("../../src/models/pedidoModel");
+const webhookService = require("../../src/services/webhookService");
 const {
   db,
   TEST_PREFIX,
@@ -2535,5 +2537,186 @@ describe("PASSO 12 - Finalização de pedido WhatsApp", () => {
     expect(pedidosE1Compartilhado).toBe(1);
     expect(pedidosE2Compartilhado).toBe(0);
     expect(pedidosE1Outro).toBe(0);
+  });
+});
+
+describe("PASSO 13 - Hardening de produção (webhook)", () => {
+  const envOriginal = {
+    signingSecret: process.env.WEBHOOK_SIGNING_SECRET,
+    rateWindow: process.env.WEBHOOK_RATE_LIMIT_WINDOW_MS,
+    rateMax: process.env.WEBHOOK_RATE_LIMIT_MAX,
+  };
+
+  function gerarPayloadRaw(idExterno, telefone = "5511999100001") {
+    return JSON.stringify(
+      buildWebhookPayload({
+        idExterno,
+        empresaId: 1,
+        telefone,
+        texto: "oi hardening",
+      }),
+    );
+  }
+
+  function assinarPayload(rawBody, secret) {
+    const signature = crypto
+      .createHmac("sha256", secret)
+      .update(rawBody, "utf8")
+      .digest("hex");
+
+    return `sha256=${signature}`;
+  }
+
+  beforeEach(() => {
+    webhookService.__resetWebhookSecurityStateForTests();
+    process.env.WEBHOOK_SIGNING_SECRET = "";
+    process.env.WEBHOOK_RATE_LIMIT_WINDOW_MS = "60000";
+    process.env.WEBHOOK_RATE_LIMIT_MAX = "0";
+  });
+
+  afterAll(() => {
+    process.env.WEBHOOK_SIGNING_SECRET = envOriginal.signingSecret;
+    process.env.WEBHOOK_RATE_LIMIT_WINDOW_MS = envOriginal.rateWindow;
+    process.env.WEBHOOK_RATE_LIMIT_MAX = envOriginal.rateMax;
+    webhookService.__resetWebhookSecurityStateForTests();
+  });
+
+  test("13.1 assinatura válida aceita evento", async () => {
+    process.env.WEBHOOK_SIGNING_SECRET = "segredo_teste_webhook";
+
+    const idExterno = `${TEST_PREFIX}-WA-HARD-SIG-OK-${Date.now()}`;
+    const rawBody = gerarPayloadRaw(idExterno, "5511999100002");
+    const signature = assinarPayload(
+      rawBody,
+      process.env.WEBHOOK_SIGNING_SECRET,
+    );
+
+    const response = await request(app)
+      .post("/webhook/whatsapp")
+      .set("Content-Type", "application/json")
+      .set("x-hub-signature-256", signature)
+      .send(rawBody);
+
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("processado");
+    expect(response.body.code).toBe("WEBHOOK_PROCESSED");
+  });
+
+  test("13.2 assinatura inválida rejeita evento com status adequado", async () => {
+    process.env.WEBHOOK_SIGNING_SECRET = "segredo_teste_webhook";
+
+    const idExterno = `${TEST_PREFIX}-WA-HARD-SIG-NOK-${Date.now()}`;
+    const rawBody = gerarPayloadRaw(idExterno, "5511999100003");
+
+    const response = await request(app)
+      .post("/webhook/whatsapp")
+      .set("Content-Type", "application/json")
+      .set("x-hub-signature-256", "sha256=assinatura_invalida")
+      .send(rawBody);
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("assinatura inválida");
+    expect(response.body.code).toBe("WEBHOOK_UNAUTHORIZED");
+  });
+
+  test("13.3 rate limit bloqueia excesso de chamadas", async () => {
+    process.env.WEBHOOK_RATE_LIMIT_WINDOW_MS = "60000";
+    process.env.WEBHOOK_RATE_LIMIT_MAX = "2";
+
+    const payload1 = buildWebhookPayload({
+      idExterno: `${TEST_PREFIX}-WA-HARD-RL-1-${Date.now()}`,
+      empresaId: 1,
+      telefone: "5511999100004",
+      texto: "oi 1",
+    });
+
+    const payload2 = buildWebhookPayload({
+      idExterno: `${TEST_PREFIX}-WA-HARD-RL-2-${Date.now()}`,
+      empresaId: 1,
+      telefone: "5511999100004",
+      texto: "oi 2",
+    });
+
+    const payload3 = buildWebhookPayload({
+      idExterno: `${TEST_PREFIX}-WA-HARD-RL-3-${Date.now()}`,
+      empresaId: 1,
+      telefone: "5511999100004",
+      texto: "oi 3",
+    });
+
+    const r1 = await request(app).post("/webhook/whatsapp").send(payload1);
+    const r2 = await request(app).post("/webhook/whatsapp").send(payload2);
+    const r3 = await request(app).post("/webhook/whatsapp").send(payload3);
+
+    expect(r1.status).toBe(200);
+    expect(r2.status).toBe(200);
+    expect(r3.status).toBe(429);
+    expect(r3.body.error).toBe("limite de requisições excedido");
+    expect(r3.body.code).toBe("WEBHOOK_RATE_LIMIT_EXCEEDED");
+  });
+
+  test("13.4 requisição dentro do limite continua funcionando", async () => {
+    process.env.WEBHOOK_RATE_LIMIT_WINDOW_MS = "60000";
+    process.env.WEBHOOK_RATE_LIMIT_MAX = "3";
+
+    const payload1 = buildWebhookPayload({
+      idExterno: `${TEST_PREFIX}-WA-HARD-RLW-1-${Date.now()}`,
+      empresaId: 1,
+      telefone: "5511999100005",
+      texto: "oi 1",
+    });
+
+    const payload2 = buildWebhookPayload({
+      idExterno: `${TEST_PREFIX}-WA-HARD-RLW-2-${Date.now()}`,
+      empresaId: 1,
+      telefone: "5511999100005",
+      texto: "oi 2",
+    });
+
+    const r1 = await request(app).post("/webhook/whatsapp").send(payload1);
+    const r2 = await request(app).post("/webhook/whatsapp").send(payload2);
+
+    expect(r1.status).toBe(200);
+    expect(r2.status).toBe(200);
+    expect(r2.body.status).toBe("processado");
+  });
+
+  test("13.5 correlation_id presente em resposta e log estruturado", async () => {
+    const correlationId = `corr-${Date.now()}`;
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    try {
+      const payload = buildWebhookPayload({
+        idExterno: `${TEST_PREFIX}-WA-HARD-CORR-${Date.now()}`,
+        empresaId: 1,
+        telefone: "5511999100006",
+        texto: "oi corr",
+      });
+
+      const response = await request(app)
+        .post("/webhook/whatsapp")
+        .set("x-correlation-id", correlationId)
+        .send(payload);
+
+      expect(response.status).toBe(200);
+      expect(response.headers["x-correlation-id"]).toBe(correlationId);
+      expect(response.body.correlation_id).toBe(correlationId);
+
+      const logsEstruturados = logSpy.mock.calls
+        .map((call) => call[0])
+        .filter(
+          (entry) =>
+            typeof entry === "string" &&
+            entry.includes('"component":"webhook_whatsapp"'),
+        );
+
+      expect(
+        logsEstruturados.some((entry) =>
+          entry.includes(`"correlation_id":"${correlationId}"`),
+        ),
+      ).toBe(true);
+    } finally {
+      logSpy.mockRestore();
+    }
   });
 });

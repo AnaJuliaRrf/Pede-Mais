@@ -10,7 +10,15 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(
+  express.json({
+    verify(req, _res, buf) {
+      if (req.originalUrl && req.originalUrl.startsWith("/webhook/whatsapp")) {
+        req.rawBody = buf.toString("utf8");
+      }
+    },
+  }),
+);
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });
