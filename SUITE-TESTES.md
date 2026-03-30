@@ -482,6 +482,59 @@ Use `empresa_id = 1`
 
 ---
 
+## ✅ PASSO 12: Finalização do pedido WhatsApp (9 testes)
+
+### 12.1 - Fluxo feliz cria pedido e baixa estoque
+
+- Em `pronto_para_criar_pedido`, enviar confirmação final (`1`)
+- Esperado: cria pedido definitivo em `pedidos` + itens em `itens_pedido`
+- Esperado: baixa de estoque consistente
+- Esperado: sessão vai para `concluido` com vínculo `pedido_id_criado`
+
+### 12.2 - Reenvio da confirmação não duplica pedido
+
+- Após pedido já concluído, reenviar confirmação
+- Esperado: não criar novo pedido
+- Esperado: resposta idempotente mantendo `concluido`
+
+### 12.3 - Falha intermediária faz rollback total
+
+- Simular erro interno entre inserção de pedido/itens/baixa estoque
+- Esperado: sem pedido parcial, sem baixa parcial, sessão consistente para retomada
+
+### 12.4 - Estoque insuficiente com opção 1 (ajuste automático)
+
+- Na confirmação, detectar insuficiência
+- Oferecer opções `1/2/3`
+- Opção `1`: ajustar quantidade para disponível e retornar para nova confirmação
+
+### 12.5 - Estoque insuficiente com opção 2 (remoção)
+
+- Opção `2`: remover item insuficiente do carrinho
+- Esperado: manter contexto de sessão sem perder estado do restante
+
+### 12.6 - Estoque insuficiente com opção 3 (cancelar finalização)
+
+- Opção `3`: cancelar somente a finalização
+- Esperado: permanecer em `pronto_para_criar_pedido` sem criar pedido
+
+### 12.7 - Carrinho vazio após ajustes/remoções
+
+- Quando carrinho zera após tratativa de estoque
+- Esperado: retornar com segurança para seleção de itens (`aguardando_item_menu`)
+
+### 12.8 - Isolamento por empresa e telefone
+
+- Fluxos paralelos em empresas/telefones distintos
+- Esperado: criação/estado isolados por `(empresa_id, telefone)`
+
+### 12.9 - Regressão cumulativa completa
+
+- Rodar suíte inteira após o PASSO 12
+- Esperado: tudo verde sem regressão dos passos anteriores
+
+---
+
 ## 📌 COMO USAR
 
 No Thunder Client, organize em pastas:

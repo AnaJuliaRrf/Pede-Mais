@@ -1,5 +1,6 @@
 const webhookModel = require("../models/webhookModel");
 const configuracaoService = require("./configuracaoService");
+const pedidoModel = require("../models/pedidoModel");
 
 const ESTADOS = {
   AGUARDANDO_NOME: "aguardando_nome",
@@ -14,6 +15,8 @@ const ESTADOS = {
   AGUARDANDO_NECESSIDADE_TROCO: "aguardando_necessidade_troco",
   AGUARDANDO_TROCO_PARA: "aguardando_troco_para",
   PRONTO_PARA_CRIAR_PEDIDO: "pronto_para_criar_pedido",
+  AGUARDANDO_TRATATIVA_ESTOQUE: "aguardando_tratativa_estoque",
+  CONCLUIDO: "concluido",
 };
 
 function verifyChallenge(query) {
@@ -197,7 +200,129 @@ function buildPreResumoCompleto(sessao, itens) {
     }
   }
 
-  return `Pré-resumo final:\n${base}\n${detalhes.join("\n")}`;
+  return `Pré-resumo final:\n${base}\n${detalhes.join("\n")}\nResponda 1 para confirmar o pedido.`;
+}
+
+function buildResumoConclusao({ pedidoId, valorTotal }) {
+  return [
+    `Pedido confirmado com sucesso! Número do pedido: ${pedidoId}.`,
+    `Valor total: R$ ${Number(valorTotal).toFixed(2)}`,
+  ].join("\n");
+}
+
+function buildMensagemEstoqueInsuficiente({
+  produtoNome,
+  solicitado,
+  disponivel,
+}) {
+  return [
+    `Estoque insuficiente para ${produtoNome}. Solicitado: ${solicitado}, disponível: ${disponivel}.`,
+    "Escolha como deseja continuar:",
+    "1 - Ajustar automaticamente para o disponível",
+    "2 - Remover item",
+    "3 - Cancelar finalização",
+  ].join("\n");
+}
+
+async function finalizarPedidoDefinitivo(sessao, empresaId) {
+  if (!Number.isInteger(Number(empresaId)) || Number(empresaId) <= 0) {
+    return { invalidEmpresa: true };
+  }
+
+  const itensCarrinho = await webhookModel.listCarrinhoBySessaoId(sessao.id);
+  if (!itensCarrinho.length) {
+    return { carrinhoVazio: true };
+  }
+
+  const connection = await pedidoModel.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const itensCalculados = [];
+    let valorTotal = 0;
+
+    for (const item of itensCarrinho) {
+      const produto = await pedidoModel.findProdutoParaPedido(
+        connection,
+        empresaId,
+        item.produto_id,
+      );
+
+      if (!produto || !produto.ativo) {
+        await connection.rollback();
+        return {
+          indisponivel: true,
+          produto_id: item.produto_id,
+        };
+      }
+
+      const solicitado = Number(item.quantidade);
+      const disponivel = Number(produto.quantidade_estoque);
+
+      if (disponivel < solicitado) {
+        await connection.rollback();
+        return {
+          estoqueInsuficiente: {
+            produto_id: item.produto_id,
+            produto_nome: item.produto_nome || produto.nome,
+            solicitado,
+            disponivel,
+          },
+        };
+      }
+
+      const precoUnitario = Number(produto.preco);
+      const subtotal = precoUnitario * solicitado;
+      valorTotal += subtotal;
+
+      itensCalculados.push({
+        produto_id: item.produto_id,
+        quantidade: solicitado,
+        preco_unitario: precoUnitario,
+      });
+    }
+
+    if (!itensCalculados.length) {
+      await connection.rollback();
+      return { carrinhoVazio: true };
+    }
+
+    const pedidoId = await pedidoModel.insertPedido(connection, {
+      empresa_id: Number(empresaId),
+      cliente_nome: sessao.nome_cliente || "Cliente",
+      telefone: sessao.telefone_origem,
+      tipo_recebimento: sessao.tipo_recebimento,
+      endereco: sessao.tipo_recebimento === "entrega" ? sessao.endereco : null,
+      forma_pagamento: sessao.forma_pagamento,
+      troco_para:
+        sessao.forma_pagamento === "dinheiro" ? sessao.troco_para : null,
+      valor_total: valorTotal,
+    });
+
+    await pedidoModel.insertItensPedido(connection, pedidoId, itensCalculados);
+
+    for (const item of itensCalculados) {
+      await pedidoModel.baixarEstoque(
+        connection,
+        item.produto_id,
+        item.quantidade,
+      );
+    }
+
+    await connection.commit();
+
+    return {
+      success: true,
+      pedidoId,
+      valorTotal,
+    };
+  } catch (error) {
+    await connection.rollback();
+    return { internalError: true };
+  } finally {
+    connection.release();
+  }
 }
 
 async function resetSessaoInconsistente(sessaoId) {
@@ -212,6 +337,10 @@ async function resetSessaoInconsistente(sessaoId) {
     forma_pagamento: null,
     precisa_troco: null,
     troco_para: null,
+    pedido_id_criado: null,
+    estoque_produto_pendente: null,
+    estoque_disponivel_pendente: null,
+    ultima_opcao_estoque: null,
   });
 
   return {
@@ -222,6 +351,13 @@ async function resetSessaoInconsistente(sessaoId) {
 }
 
 async function processarEstado(sessao, empresaId, textoMensagem) {
+  if (sessao.estado_atual === ESTADOS.CONCLUIDO) {
+    return {
+      estado_atual: ESTADOS.CONCLUIDO,
+      resposta: `Seu pedido já foi confirmado anteriormente. Número: ${sessao.pedido_id_criado || "indisponível"}.`,
+    };
+  }
+
   if (sessao.estado_atual === ESTADOS.AGUARDANDO_NOME) {
     const nome = (textoMensagem || "").trim();
     if (!nome) {
@@ -596,7 +732,221 @@ async function processarEstado(sessao, empresaId, textoMensagem) {
     };
   }
 
+  if (sessao.estado_atual === ESTADOS.AGUARDANDO_TRATATIVA_ESTOQUE) {
+    const produtoPendente = Number(sessao.estoque_produto_pendente || 0);
+    const disponivel = Number(sessao.estoque_disponivel_pendente || 0);
+
+    if (!produtoPendente) {
+      return resetSessaoInconsistente(sessao.id);
+    }
+
+    if (textoMensagem === "1") {
+      if (disponivel > 0) {
+        await webhookModel.updateCarrinhoItemQuantidade(
+          sessao.id,
+          produtoPendente,
+          disponivel,
+        );
+      } else {
+        await webhookModel.removeCarrinhoItem(sessao.id, produtoPendente);
+      }
+
+      const itensCarrinho = await webhookModel.listCarrinhoBySessaoId(
+        sessao.id,
+      );
+
+      if (!itensCarrinho.length) {
+        const produtos =
+          await webhookModel.listProdutosAtivosByEmpresa(empresaId);
+        await webhookModel.updateSessaoById(sessao.id, {
+          estado_atual: ESTADOS.AGUARDANDO_ITEM_MENU,
+          estoque_produto_pendente: null,
+          estoque_disponivel_pendente: null,
+          ultima_opcao_estoque: "ajustar",
+        });
+
+        return {
+          estado_atual: ESTADOS.AGUARDANDO_ITEM_MENU,
+          resposta: `Carrinho ficou vazio após ajuste. Vamos escolher itens novamente.\n${buildMenuText(produtos)}`,
+        };
+      }
+
+      await webhookModel.updateSessaoById(sessao.id, {
+        estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+        estoque_produto_pendente: null,
+        estoque_disponivel_pendente: null,
+        ultima_opcao_estoque: "ajustar",
+      });
+
+      const sessaoAtualizada = await webhookModel.findSessaoByEmpresaTelefone(
+        empresaId,
+        sessao.telefone_origem,
+      );
+      return {
+        estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+        resposta: buildPreResumoCompleto(sessaoAtualizada, itensCarrinho),
+      };
+    }
+
+    if (textoMensagem === "2") {
+      await webhookModel.removeCarrinhoItem(sessao.id, produtoPendente);
+      const itensCarrinho = await webhookModel.listCarrinhoBySessaoId(
+        sessao.id,
+      );
+
+      if (!itensCarrinho.length) {
+        const produtos =
+          await webhookModel.listProdutosAtivosByEmpresa(empresaId);
+        await webhookModel.updateSessaoById(sessao.id, {
+          estado_atual: ESTADOS.AGUARDANDO_ITEM_MENU,
+          estoque_produto_pendente: null,
+          estoque_disponivel_pendente: null,
+          ultima_opcao_estoque: "remover",
+        });
+
+        return {
+          estado_atual: ESTADOS.AGUARDANDO_ITEM_MENU,
+          resposta: `Item removido. Carrinho ficou vazio e voltamos ao cardápio.\n${buildMenuText(produtos)}`,
+        };
+      }
+
+      await webhookModel.updateSessaoById(sessao.id, {
+        estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+        estoque_produto_pendente: null,
+        estoque_disponivel_pendente: null,
+        ultima_opcao_estoque: "remover",
+      });
+
+      const sessaoAtualizada = await webhookModel.findSessaoByEmpresaTelefone(
+        empresaId,
+        sessao.telefone_origem,
+      );
+      return {
+        estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+        resposta: buildPreResumoCompleto(sessaoAtualizada, itensCarrinho),
+      };
+    }
+
+    if (textoMensagem === "3") {
+      await webhookModel.updateSessaoById(sessao.id, {
+        estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+        estoque_produto_pendente: null,
+        estoque_disponivel_pendente: null,
+        ultima_opcao_estoque: "cancelar",
+      });
+
+      const sessaoAtualizada = await webhookModel.findSessaoByEmpresaTelefone(
+        empresaId,
+        sessao.telefone_origem,
+      );
+      const itensCarrinho = await webhookModel.listCarrinhoBySessaoId(
+        sessao.id,
+      );
+
+      return {
+        estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+        resposta: `Finalização cancelada. Você pode ajustar seu pedido e confirmar novamente.\n${buildPreResumoCompleto(sessaoAtualizada, itensCarrinho)}`,
+      };
+    }
+
+    return {
+      estado_atual: ESTADOS.AGUARDANDO_TRATATIVA_ESTOQUE,
+      resposta:
+        "Opção inválida. Responda 1 para ajustar, 2 para remover ou 3 para cancelar a finalização.",
+    };
+  }
+
   if (sessao.estado_atual === ESTADOS.PRONTO_PARA_CRIAR_PEDIDO) {
+    if (textoMensagem === "1") {
+      if (sessao.pedido_id_criado) {
+        await webhookModel.updateSessaoById(sessao.id, {
+          estado_atual: ESTADOS.CONCLUIDO,
+        });
+
+        return {
+          estado_atual: ESTADOS.CONCLUIDO,
+          resposta: `Seu pedido já foi confirmado anteriormente. Número: ${sessao.pedido_id_criado}.`,
+        };
+      }
+
+      const finalizacao = await finalizarPedidoDefinitivo(sessao, empresaId);
+
+      if (finalizacao.invalidEmpresa) {
+        return {
+          estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+          resposta:
+            "Não foi possível confirmar o pedido porque a empresa da sessão é inválida.",
+        };
+      }
+
+      if (finalizacao.carrinhoVazio) {
+        const produtos =
+          await webhookModel.listProdutosAtivosByEmpresa(empresaId);
+        await webhookModel.updateSessaoById(sessao.id, {
+          estado_atual: ESTADOS.AGUARDANDO_ITEM_MENU,
+          estoque_produto_pendente: null,
+          estoque_disponivel_pendente: null,
+          ultima_opcao_estoque: null,
+        });
+
+        return {
+          estado_atual: ESTADOS.AGUARDANDO_ITEM_MENU,
+          resposta: `Seu carrinho está vazio no momento. Vamos escolher itens novamente.\n${buildMenuText(produtos)}`,
+        };
+      }
+
+      if (finalizacao.estoqueInsuficiente) {
+        await webhookModel.updateSessaoById(sessao.id, {
+          estado_atual: ESTADOS.AGUARDANDO_TRATATIVA_ESTOQUE,
+          estoque_produto_pendente: finalizacao.estoqueInsuficiente.produto_id,
+          estoque_disponivel_pendente:
+            finalizacao.estoqueInsuficiente.disponivel,
+        });
+
+        return {
+          estado_atual: ESTADOS.AGUARDANDO_TRATATIVA_ESTOQUE,
+          resposta: buildMensagemEstoqueInsuficiente({
+            produtoNome: finalizacao.estoqueInsuficiente.produto_nome,
+            solicitado: finalizacao.estoqueInsuficiente.solicitado,
+            disponivel: finalizacao.estoqueInsuficiente.disponivel,
+          }),
+        };
+      }
+
+      if (finalizacao.indisponivel) {
+        return {
+          estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+          resposta:
+            "Um item do carrinho não está mais disponível. Revise os itens antes de confirmar.",
+        };
+      }
+
+      if (finalizacao.internalError) {
+        return {
+          estado_atual: ESTADOS.PRONTO_PARA_CRIAR_PEDIDO,
+          resposta:
+            "Ocorreu um erro interno ao confirmar o pedido. Tente novamente em instantes.",
+        };
+      }
+
+      await webhookModel.clearCarrinhoBySessaoId(sessao.id);
+      await webhookModel.updateSessaoById(sessao.id, {
+        estado_atual: ESTADOS.CONCLUIDO,
+        pedido_id_criado: finalizacao.pedidoId,
+        estoque_produto_pendente: null,
+        estoque_disponivel_pendente: null,
+        ultima_opcao_estoque: null,
+      });
+
+      return {
+        estado_atual: ESTADOS.CONCLUIDO,
+        resposta: buildResumoConclusao({
+          pedidoId: finalizacao.pedidoId,
+          valorTotal: finalizacao.valorTotal,
+        }),
+      };
+    }
+
     const sessaoAtualizada = await webhookModel.findSessaoByEmpresaTelefone(
       empresaId,
       sessao.telefone_origem,

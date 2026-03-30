@@ -2060,3 +2060,480 @@ describe("PASSO 11 - WhatsApp segunda metade (MVP)", () => {
     expect(s8.body.resposta).toContain("Pré-resumo final");
   });
 });
+
+describe("PASSO 12 - Finalização de pedido WhatsApp", () => {
+  function gerarTelefoneUnico(sufixo) {
+    const baseTempo = String(Date.now()).slice(-6);
+    const aleatorio = String(Math.floor(Math.random() * 90) + 10);
+    return `5511${sufixo}${baseTempo}${aleatorio}`;
+  }
+
+  async function enviarMensagemWebhook({ empresaId, telefone, texto, sufixo }) {
+    const idExterno = `${TEST_PREFIX}-WA-FINAL-${telefone}-${sufixo}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const payload = buildWebhookPayload({
+      idExterno,
+      empresaId,
+      telefone,
+      texto,
+    });
+
+    return request(app).post("/webhook/whatsapp").send(payload);
+  }
+
+  async function prepararMenuEmpresaComEstoque(
+    empresaId = 1,
+    quantidadeItem1 = 10,
+    quantidadeItem2 = 10,
+  ) {
+    const token =
+      empresaId === 1 ? await getTokenEmpresa1() : await getTokenEmpresa2();
+
+    const p1 = await createProdutoAutenticado(token, empresaId, {
+      nome: `${TEST_PREFIX} F Menu 1 E${empresaId}`,
+      preco: 11,
+      categoria: TEST_CATEGORY,
+      ativo: true,
+    });
+
+    const p2 = await createProdutoAutenticado(token, empresaId, {
+      nome: `${TEST_PREFIX} F Menu 2 E${empresaId}`,
+      preco: 19,
+      categoria: TEST_CATEGORY,
+      ativo: true,
+    });
+
+    await patchEstoque(
+      token,
+      p1.body.id,
+      { quantidade: quantidadeItem1, estoque_minimo: 1 },
+      empresaId,
+    );
+    await patchEstoque(
+      token,
+      p2.body.id,
+      { quantidade: quantidadeItem2, estoque_minimo: 1 },
+      empresaId,
+    );
+
+    const [menuRows] = await db.query(
+      `SELECT id
+       FROM produtos
+       WHERE empresa_id = ? AND ativo = 1
+       ORDER BY id ASC`,
+      [empresaId],
+    );
+
+    const opcaoP1 =
+      menuRows.findIndex((row) => Number(row.id) === p1.body.id) + 1;
+
+    return { p1: p1.body, p2: p2.body, opcaoP1 };
+  }
+
+  async function configurarEmpresa(empresaId, payload) {
+    const token =
+      empresaId === 1 ? await getTokenEmpresa1() : await getTokenEmpresa2();
+
+    return request(app)
+      .patch(`/empresas/${empresaId}/configuracoes`)
+      .set(authHeader(token))
+      .send(payload);
+  }
+
+  async function irAteProntoParaCriarPedido({
+    empresaId,
+    telefone,
+    quantidade = 2,
+    opcaoItem = 1,
+  }) {
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "Oi",
+      sufixo: "base0",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "Cliente Final",
+      sufixo: "base1",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: String(opcaoItem),
+      sufixo: "base2",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: String(quantidade),
+      sufixo: "base3",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "2",
+      sufixo: "base4",
+    });
+
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "ok",
+      sufixo: "base5",
+    });
+    await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "2",
+      sufixo: "base6",
+    });
+
+    const pronto = await enviarMensagemWebhook({
+      empresaId,
+      telefone,
+      texto: "2",
+      sufixo: "base7",
+    });
+
+    expect(pronto.status).toBe(200);
+    expect(pronto.body.estado_atual).toBe("pronto_para_criar_pedido");
+  }
+
+  async function contarPedidosPorTelefone(empresaId, telefone) {
+    const [rows] = await db.query(
+      "SELECT COUNT(*) AS total FROM pedidos WHERE empresa_id = ? AND telefone = ?",
+      [empresaId, telefone],
+    );
+
+    return Number(rows[0].total);
+  }
+
+  test("12.1 fluxo feliz cria pedido definitivo e baixa estoque", async () => {
+    const { p1, opcaoP1 } = await prepararMenuEmpresaComEstoque(1, 10, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefone = gerarTelefoneUnico("980001");
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone,
+      quantidade: 2,
+      opcaoItem: opcaoP1,
+    });
+
+    const confirma = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "c1",
+    });
+
+    expect(confirma.status).toBe(200);
+    expect(confirma.body.estado_atual).toBe("concluido");
+    expect(confirma.body.resposta).toContain("Pedido confirmado");
+
+    const pedidosCriados = await contarPedidosPorTelefone(1, telefone);
+    expect(pedidosCriados).toBe(1);
+
+    const [estoqueRows] = await db.query(
+      "SELECT quantidade FROM estoque WHERE produto_id = ? LIMIT 1",
+      [p1.id],
+    );
+    expect(Number(estoqueRows[0].quantidade)).toBe(8);
+  });
+
+  test("12.2 reenvio da confirmação não duplica pedido", async () => {
+    const { opcaoP1 } = await prepararMenuEmpresaComEstoque(1, 10, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefone = gerarTelefoneUnico("980002");
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone,
+      quantidade: 2,
+      opcaoItem: opcaoP1,
+    });
+
+    const primeira = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "d1",
+    });
+    const segunda = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "d2",
+    });
+
+    expect(primeira.body.estado_atual).toBe("concluido");
+    expect(segunda.body.estado_atual).toBe("concluido");
+
+    const pedidosCriados = await contarPedidosPorTelefone(1, telefone);
+    expect(pedidosCriados).toBe(1);
+  });
+
+  test("12.3 falha intermediária gera rollback total", async () => {
+    const { p1, opcaoP1 } = await prepararMenuEmpresaComEstoque(1, 10, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefone = gerarTelefoneUnico("980003");
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone,
+      quantidade: 2,
+      opcaoItem: opcaoP1,
+    });
+
+    const [estoqueAntesRows] = await db.query(
+      "SELECT quantidade FROM estoque WHERE produto_id = ? LIMIT 1",
+      [p1.id],
+    );
+    const estoqueAntes = Number(estoqueAntesRows[0].quantidade);
+
+    const spyInsertItens = jest
+      .spyOn(pedidoModel, "insertItensPedido")
+      .mockImplementationOnce(async () => {
+        throw new Error("falha simulada finalizacao whatsapp");
+      });
+
+    try {
+      const confirma = await enviarMensagemWebhook({
+        empresaId: 1,
+        telefone,
+        texto: "1",
+        sufixo: "e1",
+      });
+
+      expect(confirma.status).toBe(200);
+      expect(confirma.body.estado_atual).toBe("pronto_para_criar_pedido");
+      expect(confirma.body.resposta).toContain("erro interno");
+    } finally {
+      spyInsertItens.mockRestore();
+    }
+
+    const pedidosCriados = await contarPedidosPorTelefone(1, telefone);
+    expect(pedidosCriados).toBe(0);
+
+    const [estoqueDepoisRows] = await db.query(
+      "SELECT quantidade FROM estoque WHERE produto_id = ? LIMIT 1",
+      [p1.id],
+    );
+    const estoqueDepois = Number(estoqueDepoisRows[0].quantidade);
+    expect(estoqueDepois).toBe(estoqueAntes);
+  });
+
+  test("12.4 estoque insuficiente opção 1 ajusta para disponível", async () => {
+    const { p1, opcaoP1 } = await prepararMenuEmpresaComEstoque(1, 1, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefone = gerarTelefoneUnico("980004");
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone,
+      quantidade: 3,
+      opcaoItem: opcaoP1,
+    });
+
+    const tentaConfirmar = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "f1",
+    });
+
+    expect(tentaConfirmar.body.estado_atual).toBe(
+      "aguardando_tratativa_estoque",
+    );
+    expect(tentaConfirmar.body.resposta).toContain("Estoque insuficiente");
+
+    const ajusta = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "f2",
+    });
+    expect(ajusta.body.estado_atual).toBe("pronto_para_criar_pedido");
+
+    const conclui = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "f3",
+    });
+    expect(conclui.body.estado_atual).toBe("concluido");
+
+    const [itensRows] = await db.query(
+      `SELECT ip.quantidade
+       FROM itens_pedido ip
+       INNER JOIN pedidos p ON p.id = ip.pedido_id
+       WHERE p.empresa_id = ? AND p.telefone = ?
+       ORDER BY ip.id DESC
+       LIMIT 1`,
+      [1, telefone],
+    );
+    expect(Number(itensRows[0].quantidade)).toBe(1);
+
+    const [estoqueRows] = await db.query(
+      "SELECT quantidade FROM estoque WHERE produto_id = ? LIMIT 1",
+      [p1.id],
+    );
+    expect(Number(estoqueRows[0].quantidade)).toBe(0);
+  });
+
+  test("12.5 estoque insuficiente opção 2 remove item", async () => {
+    const { p1, opcaoP1 } = await prepararMenuEmpresaComEstoque(1, 0, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefone = gerarTelefoneUnico("980005");
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone,
+      quantidade: 2,
+      opcaoItem: opcaoP1,
+    });
+
+    const tentaConfirmar = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "g1",
+    });
+    expect(tentaConfirmar.body.estado_atual).toBe(
+      "aguardando_tratativa_estoque",
+    );
+
+    const remove = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "g2",
+    });
+    expect(["pronto_para_criar_pedido", "aguardando_item_menu"]).toContain(
+      remove.body.estado_atual,
+    );
+
+    const [carrinhoRows] = await db.query(
+      `SELECT COUNT(*) AS total
+       FROM whatsapp_carrinho_tmp c
+       INNER JOIN whatsapp_sessoes s ON s.id = c.sessao_id
+       WHERE s.empresa_id = ? AND s.telefone_origem = ? AND c.produto_id = ?`,
+      [1, telefone, p1.id],
+    );
+    expect(Number(carrinhoRows[0].total)).toBe(0);
+  });
+
+  test("12.6 estoque insuficiente opção 3 cancela finalização", async () => {
+    const { opcaoP1 } = await prepararMenuEmpresaComEstoque(1, 1, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefone = gerarTelefoneUnico("980006");
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone,
+      quantidade: 3,
+      opcaoItem: opcaoP1,
+    });
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "h1",
+    });
+
+    const cancelar = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "3",
+      sufixo: "h2",
+    });
+
+    expect(cancelar.body.estado_atual).toBe("pronto_para_criar_pedido");
+    expect(cancelar.body.resposta).toContain("Finalização cancelada");
+
+    const pedidosCriados = await contarPedidosPorTelefone(1, telefone);
+    expect(pedidosCriados).toBe(0);
+  });
+
+  test("12.7 carrinho vazio após remoção retorna para escolha de itens", async () => {
+    const { opcaoP1 } = await prepararMenuEmpresaComEstoque(1, 0, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefone = gerarTelefoneUnico("980007");
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone,
+      quantidade: 2,
+      opcaoItem: opcaoP1,
+    });
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "1",
+      sufixo: "i1",
+    });
+
+    const remove = await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone,
+      texto: "2",
+      sufixo: "i2",
+    });
+
+    expect(remove.body.estado_atual).toBe("aguardando_item_menu");
+    expect(remove.body.resposta).toContain("Cardápio");
+  });
+
+  test("12.8 isolamento por empresa e telefone permanece íntegro", async () => {
+    const { opcaoP1: opcaoE1 } = await prepararMenuEmpresaComEstoque(1, 10, 10);
+    const { opcaoP1: opcaoE2 } = await prepararMenuEmpresaComEstoque(2, 10, 10);
+    await configurarEmpresa(1, { aceita_entrega: true, aceita_retirada: true });
+    await configurarEmpresa(2, { aceita_entrega: true, aceita_retirada: true });
+
+    const telefoneCompartilhado = gerarTelefoneUnico("980008");
+    const telefoneOutro = gerarTelefoneUnico("980009");
+
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone: telefoneCompartilhado,
+      quantidade: 1,
+      opcaoItem: opcaoE1,
+    });
+    await irAteProntoParaCriarPedido({
+      empresaId: 2,
+      telefone: telefoneCompartilhado,
+      quantidade: 1,
+      opcaoItem: opcaoE2,
+    });
+    await irAteProntoParaCriarPedido({
+      empresaId: 1,
+      telefone: telefoneOutro,
+      quantidade: 1,
+      opcaoItem: opcaoE1,
+    });
+
+    await enviarMensagemWebhook({
+      empresaId: 1,
+      telefone: telefoneCompartilhado,
+      texto: "1",
+      sufixo: "j1",
+    });
+
+    const pedidosE1Compartilhado = await contarPedidosPorTelefone(
+      1,
+      telefoneCompartilhado,
+    );
+    const pedidosE2Compartilhado = await contarPedidosPorTelefone(
+      2,
+      telefoneCompartilhado,
+    );
+    const pedidosE1Outro = await contarPedidosPorTelefone(1, telefoneOutro);
+
+    expect(pedidosE1Compartilhado).toBe(1);
+    expect(pedidosE2Compartilhado).toBe(0);
+    expect(pedidosE1Outro).toBe(0);
+  });
+});

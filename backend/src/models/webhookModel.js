@@ -40,7 +40,9 @@ async function ensureWebhookTable() {
         'aguardando_forma_pagamento',
         'aguardando_necessidade_troco',
         'aguardando_troco_para',
-        'pronto_para_criar_pedido'
+        'pronto_para_criar_pedido',
+        'aguardando_tratativa_estoque',
+        'concluido'
       ) NOT NULL,
       nome_cliente VARCHAR(191) NULL,
       item_menu_pendente BIGINT NULL,
@@ -50,6 +52,10 @@ async function ensureWebhookTable() {
       forma_pagamento VARCHAR(32) NULL,
       precisa_troco TINYINT(1) NULL,
       troco_para DECIMAL(10,2) NULL,
+      pedido_id_criado BIGINT NULL,
+      estoque_produto_pendente BIGINT NULL,
+      estoque_disponivel_pendente INT NULL,
+      ultima_opcao_estoque VARCHAR(16) NULL,
       criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       UNIQUE KEY uq_whatsapp_sessoes_empresa_telefone (empresa_id, telefone_origem)
@@ -70,7 +76,9 @@ async function ensureWebhookTable() {
        'aguardando_forma_pagamento',
        'aguardando_necessidade_troco',
        'aguardando_troco_para',
-       'pronto_para_criar_pedido'
+       'pronto_para_criar_pedido',
+       'aguardando_tratativa_estoque',
+       'concluido'
      ) NOT NULL`,
   );
 
@@ -107,6 +115,32 @@ async function ensureWebhookTable() {
   if (!(await columnExists("whatsapp_sessoes", "troco_para"))) {
     await db.query(
       "ALTER TABLE whatsapp_sessoes ADD COLUMN troco_para DECIMAL(10,2) NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "pedido_id_criado"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN pedido_id_criado BIGINT NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "estoque_produto_pendente"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN estoque_produto_pendente BIGINT NULL",
+    );
+  }
+
+  if (
+    !(await columnExists("whatsapp_sessoes", "estoque_disponivel_pendente"))
+  ) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN estoque_disponivel_pendente INT NULL",
+    );
+  }
+
+  if (!(await columnExists("whatsapp_sessoes", "ultima_opcao_estoque"))) {
+    await db.query(
+      "ALTER TABLE whatsapp_sessoes ADD COLUMN ultima_opcao_estoque VARCHAR(16) NULL",
     );
   }
 
@@ -196,6 +230,10 @@ async function findSessaoByEmpresaTelefone(empresaId, telefoneOrigem) {
       forma_pagamento,
       precisa_troco,
       troco_para,
+      pedido_id_criado,
+      estoque_produto_pendente,
+      estoque_disponivel_pendente,
+      ultima_opcao_estoque,
       criado_em,
       atualizado_em
      FROM whatsapp_sessoes
@@ -282,6 +320,27 @@ async function listCarrinhoBySessaoId(sessaoId) {
   return rows;
 }
 
+async function updateCarrinhoItemQuantidade(sessaoId, produtoId, quantidade) {
+  const [result] = await db.query(
+    `UPDATE whatsapp_carrinho_tmp
+     SET quantidade = ?
+     WHERE sessao_id = ? AND produto_id = ?`,
+    [quantidade, sessaoId, produtoId],
+  );
+
+  return result.affectedRows;
+}
+
+async function removeCarrinhoItem(sessaoId, produtoId) {
+  const [result] = await db.query(
+    `DELETE FROM whatsapp_carrinho_tmp
+     WHERE sessao_id = ? AND produto_id = ?`,
+    [sessaoId, produtoId],
+  );
+
+  return result.affectedRows;
+}
+
 async function listProdutosAtivosByEmpresa(empresaId) {
   const [rows] = await db.query(
     `SELECT id, nome, preco
@@ -317,6 +376,8 @@ module.exports = {
   clearCarrinhoBySessaoId,
   upsertCarrinhoItem,
   listCarrinhoBySessaoId,
+  updateCarrinhoItemQuantidade,
+  removeCarrinhoItem,
   listProdutosAtivosByEmpresa,
   findProdutoAtivoByEmpresaAndId,
 };
