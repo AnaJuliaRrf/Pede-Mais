@@ -1,5 +1,7 @@
 # Operacao de Producao - Pede Mais Backend
 
+> Nota de contexto academico: este guia permanece como referencia tecnica principal de operacao; para avaliacao academica, combinar com `RELATORIO-HOMOLOGACAO.md` e com o roteiro de demonstracao do `README.md`.
+
 ## Objetivo
 
 Documento executavel para decisao de release (go/no-go), deploy, rollback e validacao pos-deploy.

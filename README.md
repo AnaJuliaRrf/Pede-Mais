@@ -37,3 +37,15 @@ Scripts disponíveis em `backend/package.json`:
 Checklist executavel de go-live, rollback e smoke tests:
 
 - `OPERACAO-PRODUCAO.md`
+
+## Roteiro de Demonstracao
+
+1. Executar `GET /health` e mostrar status 200.
+2. Executar login em `POST /auth/login` e validar retorno de token.
+3. Executar `GET /empresas/1/produtos` sem token para evidenciar rota publica.
+4. Demonstrar fluxo WhatsApp ate `pronto_para_criar_pedido` e confirmacao final com criacao de pedido.
+5. Demonstrar idempotencia do webhook com mesmo `id_externo` (segunda chamada como `duplicado`).
+6. Demonstrar hardening do webhook:
+   - assinatura invalida retorna 401,
+   - excesso de chamadas retorna 429.
+7. Mostrar evidencia da suite cumulativa executada 2x consecutivas com 100% verde.
