@@ -31,3 +31,9 @@ Scripts disponíveis em `backend/package.json`:
 - `npm --prefix backend run test`
 - `npm --prefix backend run test:watch`
 - `npm --prefix backend run test:ci`
+
+## Operacao de producao
+
+Checklist executavel de go-live, rollback e smoke tests:
+
+- `OPERACAO-PRODUCAO.md`
