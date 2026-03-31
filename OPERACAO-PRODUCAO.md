@@ -60,6 +60,7 @@ Valores recomendados iniciais:
 ## 5) Checklist go-live
 
 Classificacao:
+
 - `ok`: validado
 - `pendente`: executar antes da janela de deploy
 - `bloqueador`: impede release
