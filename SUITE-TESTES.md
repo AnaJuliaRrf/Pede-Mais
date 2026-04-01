@@ -1,588 +1,1071 @@
-# 📋 SUITE DE TESTES CUMULATIVA — Pede Mais Backend
+# SUITE DE TESTES CUMULATIVA - Pede Mais Backend (Manual Pratico)
 
-**Instruções**: Execute TODOS os testes aqui **ANTES DE COMMITAR CADA PASSO**.
+Objetivo: manter exatamente os mesmos cenarios da suite, em formato rapido para executar no Thunder Client.
 
----
+## Setup rapido (copiar e ajustar)
 
-## ✅ PASSO 1: Bootstrap Express (2 testes)
+- BASE_URL: `http://localhost:3000`
+- EMPRESA_PADRAO: `1`
+- TOKEN_EMPRESA_1: `<token do login 8.1>`
+- TOKEN_EMPRESA_2: `<token de outra empresa para testes 8.11 e 5.8>`
+- PRODUTO_ID: `<id criado no passo 2.1>`
+- PEDIDO_ID: `<id criado no passo 4.1>`
 
-### 1.1 - GET /health
+Headers padrao para rotas protegidas:
 
-- **URL**: `http://localhost:3000/health`
-- **Método**: GET
-- **Esperado**: 200 + `{ "ok": true }`
-
-### 1.2 - Server sobe na porta correta
-
-- **URL**: `http://localhost:3000/health`
-- **Método**: GET
-- **Verificar**: Sem erro de conexão
-
----
-
-## ✅ PASSO 2: CRUD Produtos (7 testes)
-
-Use `empresa_id = 1`
-
-### 2.1 - POST /empresas/1/produtos (válido)
-
-- **Body**: `{ "nome": "Pizza Calabresa", "descricao": "...", "preco": 45.50, "categoria": "Pizza", "ativo": true }`
-- **Esperado**: 201, com `id` gerado
-
-### 2.2 - POST /empresas/1/produtos (nome faltando)
-
-- **Body**: `{ "preco": 30 }`
-- **Esperado**: 400, `error: "nome é obrigatório"`
-
-### 2.3 - POST /empresas/1/produtos (preço negativo)
-
-- **Body**: `{ "nome": "Test", "preco": -10 }`
-- **Esperado**: 400, `error: "preco..."`
-
-### 2.4 - GET /empresas/1/produtos
-
-- **Esperado**: 200, array com produtos
-
-### 2.5 - PUT /empresas/1/produtos/{id} (atualizar)
-
-- **Body**: `{ "nome": "Pizza Especial", "preco": 55.00, "descricao": "...", "categoria": "Pizza", "ativo": true }`
-- **Esperado**: 200
-
-### 2.6 - DELETE /empresas/1/produtos/{id}
-
-- **Esperado**: 200, `{ "message": "produto removido com sucesso" }`
-
-### 2.7 - GET /empresas/999/produtos (multiempresa)
-
-- **Esperado**: 200, array vazio
+```http
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+```
 
 ---
 
-## ✅ PASSO 3: Estoque (6 testes)
+## PASSO 1 - Bootstrap Express (2 testes)
 
-**Pré-requisito**: Produto criado no Passo 2
+### 1.1 - Health
 
-### 3.1 - GET /empresas/1/estoque
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/health`
+- Body: nao usa
+- Retorno esperado: `200` e `{ "ok": true }`
 
-- **Esperado**: 200, array com produtos + estoque
+### 1.2 - Server na porta correta
 
-### 3.2 - PATCH /empresas/1/estoque/{id} (quantidade)
-
-- **Body**: `{ "quantidade": 50 }`
-- **Esperado**: 200, `{ produto_id, empresa_id, quantidade: 50, estoque_minimo }`
-
-### 3.3 - PATCH /empresas/1/estoque/{id} (estoque_minimo)
-
-- **Body**: `{ "estoque_minimo": 10 }`
-- **Esperado**: 200, com estoque_minimo: 10
-
-### 3.4 - PATCH /empresas/1/estoque/{id} (quantidade negativa)
-
-- **Body**: `{ "quantidade": -5 }`
-- **Esperado**: 400, `error: "quantidade..."`
-
-### 3.5 - PATCH /empresas/1/estoque/999 (inexistente)
-
-- **Esperado**: 404
-
-### 3.6 - GET /empresas/1/estoque/baixo
-
-- **Esperado**: 200, array com itens onde qty <= minimo
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/health`
+- Body: nao usa
+- Retorno esperado: sem erro de conexao
 
 ---
 
-## ✅ PASSO 4: Pedidos + Transação (6 testes)
+## PASSO 2 - CRUD Produtos (7 testes)
 
-**Pré-requisito**: Produto com qty=100 e preço=45.50
+### 2.1 - Criar produto valido
 
-### 4.0 - POST /empresas/1/pedidos (público, sem token)
-
-- Esperado: 201 (criação de pedido permanece pública)
-
-### 4.1 - POST /empresas/1/pedidos (entrega válida)
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
 ```json
 {
-  "cliente_nome": "João",
-  "telefone": "11987654321",
-  "tipo_recebimento": "entrega",
-  "endereco": "Rua X, 123",
-  "forma_pagamento": "dinheiro",
-  "troco_para": 100.0,
-  "itens": [{ "produto_id": 1, "quantidade": 2 }]
+  "nome": "Pizza Brotinho Doce",
+  "descricao": "chocolate com morangos frescos",
+  "preco": 30,
+  "categoria": "Pizza",
+  "ativo": true
 }
 ```
 
-### 4.1 - POST /empresas/1/pedidos (entrega válida)
+- Retorno esperado: `201` com `id` gerado
 
-- Esperado: 201, valor_total: 91, itens com preco_unitario, subtotal
+### 2.2 - Criar produto sem nome
 
-### 4.2 - POST /empresas/1/pedidos (retirada)
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-- Mesmo que 4.1, mas tipo_recebimento: "retirada" sem endereco
-- Esperado: 201
+```json
+{
+  "preco": 30
+}
+```
 
-### 4.3 - POST /empresas/1/pedidos (estoque insuficiente)
+- Retorno esperado: `400`, `error: "nome e obrigatorio"`
 
-- qty: 200 (só há 100)
-- Esperado: 400, error: "estoque insuficiente..."
+### 2.3 - Criar produto com preco negativo
 
-### 4.4 - Validações (campos obrigatórios, formato, etc.)
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-- sem cliente_nome → 400
-- sem telefone → 400
-- tipo_recebimento: "xyz" → 400
-- entrega sem endereco → 400
-- forma_pagamento: "bitcoin" → 400
-- dinheiro sem troco_para → 400
-- itens vazio → 400
-- produto inexistente → 404
+```json
+{
+  "nome": "Test",
+  "preco": -10
+}
+```
 
-### 4.5 - GET /empresas/1/pedidos
+- Retorno esperado: `400`, `error: "preco..."`
 
-- Esperado: 200, array com pedidos
+### 2.4 - Listar produtos da empresa
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Body: nao usa
+- Retorno esperado: `200`, array com produtos
+
+### 2.5 - Atualizar produto
+
+- Metodo: `PUT`
+- URL: `{{BASE_URL}}/empresas/1/produtos/{{PRODUTO_ID}}`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "nome": "Pizza Especial",
+  "preco": 55,
+  "descricao": "...",
+  "categoria": "Pizza",
+  "ativo": true
+}
+```
+
+- Retorno esperado: `200`
+
+### 2.6 - Remover produto
+
+- Metodo: `DELETE`
+- URL: `{{BASE_URL}}/empresas/1/produtos/{{PRODUTO_ID}}`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, `{ "message": "produto removido com sucesso" }`
+
+### 2.7 - Multiempresa isolada
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/999/produtos`
+- Body: nao usa
+- Retorno esperado: `200`, array vazio
+
+---
+
+## PASSO 3 - Estoque (6 testes)
+
+Pre-requisito: produto criado no passo 2.
+
+### 3.1 - Listar estoque
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/estoque`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, array com produtos + estoque
+
+### 3.2 - Atualizar quantidade
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/estoque/{{PRODUTO_ID}}`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "quantidade": 50
+}
+```
+
+- Retorno esperado: `200`, com `quantidade: 50`
+
+### 3.3 - Atualizar estoque minimo
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/estoque/{{PRODUTO_ID}}`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "estoque_minimo": 10
+}
+```
+
+- Retorno esperado: `200`, com `estoque_minimo: 10`
+
+### 3.4 - Quantidade negativa
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/estoque/{{PRODUTO_ID}}`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "quantidade": -5
+}
+```
+
+- Retorno esperado: `400`, `error: "quantidade..."`
+
+### 3.5 - Produto inexistente
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/estoque/999`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "quantidade": 10
+}
+```
+
+- Retorno esperado: `404`
+
+### 3.6 - Estoque baixo
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/estoque/baixo`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, itens com `quantidade <= estoque_minimo`
+
+---
+
+## PASSO 4 - Pedidos + Transacao (6 testes)
+
+Pre-requisito: produto com `quantidade=100` e `preco=45.50`.
+
+### 4.0 - Criacao publica de pedido (sem token)
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/pedidos`
+- Body: usar mesmo formato do 4.1
+- Retorno esperado: `201` (continua publico)
+
+### 4.1 - Pedido entrega valido
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/pedidos`
+- Body:
+
+```json
+{
+  "cliente_nome": "Camilo",
+  "telefone": "11987654321",
+  "tipo_recebimento": "entrega",
+  "endereco": "Avenida Brasil, 1000",
+  "forma_pagamento": "dinheiro",
+  "troco_para": 90,
+  "itens": [
+    {
+      "produto_id": 1,
+      "quantidade": 2
+    }
+  ]
+}
+```
+
+- Retorno esperado: `201`, `valor_total` e itens com `preco_unitario` e `subtotal`
+
+### 4.2 - Pedido retirada valido
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/pedidos`
+- Body: igual ao 4.1, mudando `tipo_recebimento` para `retirada` e sem `endereco`
+- Retorno esperado: `201`
+
+### 4.3 - Estoque insuficiente
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/pedidos`
+- Body: igual ao 4.1, com `quantidade` acima do estoque
+- Retorno esperado: `400`, `error: "estoque insuficiente..."`
+
+### 4.4 - Validacoes obrigatorias
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/pedidos`
+- Body: testar cada variacao abaixo separadamente
+- Casos esperados:
+  - sem `cliente_nome` -> `400`
+  - sem `telefone` -> `400`
+  - `tipo_recebimento: "xyz"` -> `400`
+  - entrega sem endereco -> `400`
+  - `forma_pagamento: "bitcoin"` -> `400`
+  - dinheiro sem `troco_para` -> `400`
+  - `itens` vazio -> `400`
+  - produto inexistente -> `404`
+
+### 4.5 - Listar pedidos
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, array com pedidos
 
 ### 4.6 - Validar baixa de estoque
 
-- Criar pedido com 2 unidades
-- Consultar estoque do produto
-- Esperado: qty = 98 (foi 100)
+- Metodo: fluxo combinado
+- URL 1: `POST {{BASE_URL}}/empresas/1/pedidos` (pedido com 2 unidades)
+- URL 2: `GET {{BASE_URL}}/empresas/1/estoque`
+- Retorno esperado: quantidade final reduzida corretamente (exemplo: 100 -> 98)
 
 ---
 
-## ✅ PASSO 5: Status de Pedido (8 testes)
+## PASSO 5 - Status de Pedido (8 testes)
 
-**Pré-requisito**: Pedido com status pendente
+Pre-requisito: pedido com status inicial `pendente`.
 
-### 5.1 - PATCH /empresas/1/pedidos/{id}/status
+### 5.1 - pendente -> em_preparo
 
-- Body: { "status": "em_preparo" }
-- Esperado: 200, status: "em_preparo"
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-### 5.2 - Transição em_preparo → saiu_para_entrega
+```json
+{
+  "status": "em_preparo"
+}
+```
 
-- Body: { "status": "saiu_para_entrega" }
-- Esperado: 200
+- Retorno esperado: `200`, status atualizado
 
-### 5.3 - Transição saiu_para_entrega → entregue
+### 5.2 - em_preparo -> saiu_para_entrega
 
-- Body: { "status": "entregue" }
-- Esperado: 200
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-### 5.4 - Transição inválida (entregue → cancelado)
+```json
+{
+  "status": "saiu_para_entrega"
+}
+```
 
-- Body: { "status": "cancelado" }
-- Esperado: 400, error: "transição inválida..."
+- Retorno esperado: `200`
 
-### 5.5 - Pular status (pendente → entregue direto)
+### 5.3 - saiu_para_entrega -> entregue
 
-- Esperado: 400
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-### 5.6 - Status inválido
+```json
+{
+  "status": "entregue"
+}
+```
 
-- Body: { "status": "xyz" }
-- Esperado: 400
+- Retorno esperado: `200`
+
+### 5.4 - Transicao invalida (entregue -> cancelado)
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "status": "cancelado"
+}
+```
+
+- Retorno esperado: `400`, `error: "transicao invalida..."`
+
+### 5.5 - Pular status (pendente -> entregue)
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "status": "entregue"
+}
+```
+
+- Retorno esperado: `400`
+
+### 5.6 - Status invalido
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "status": "xyz"
+}
+```
+
+- Retorno esperado: `400`
 
 ### 5.7 - Pedido inexistente
 
-- URL: /empresas/1/pedidos/999/status
-- Esperado: 404
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/999/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-### 5.8 - Empresa diferente
+```json
+{
+  "status": "em_preparo"
+}
+```
 
-- URL: /empresas/999/pedidos/{id_empresa_1}/status
-- Esperado: 403 (token válido, sem permissão para empresa da rota)
+- Retorno esperado: `404`
 
----
+### 5.8 - Empresa diferente sem permissao
 
-## ✅ PASSO 6: Detalhe + Filtros (8 testes)
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/999/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-### 6.1 - GET /empresas/1/pedidos/{id}
+```json
+{
+  "status": "em_preparo"
+}
+```
 
-- Esperado: 200, pedido completo + itens expandido
-
-### 6.2 - GET /empresas/1/pedidos/999
-
-- Esperado: 404
-
-### 6.3 - GET /empresas/1/pedidos (sem filtros)
-
-- Esperado: 200, todos os pedidos
-
-### 6.4 - GET /empresas/1/pedidos?status=em_preparo
-
-- Esperado: 200, apenas status: "em_preparo"
-
-### 6.5 - GET /empresas/1/pedidos?status=xyz
-
-- Esperado: 400
-
-### 6.6 - GET /empresas/1/pedidos?data_inicio=2026-03-20&data_fim=2026-03-24
-
-- Esperado: 200, só pedidos no intervalo
-
-### 6.7 - GET ...?data_inicio=abc
-
-- Esperado: 400
-
-### 6.8 - GET ...?status=pendente&data_inicio=...&data_fim=...
-
-- Esperado: 200, filtros combinados (AND)
+- Retorno esperado: `403`
 
 ---
 
-## ✅ PASSO 7: Configurações da Empresa (8 testes)
+## PASSO 6 - Detalhe + Filtros (8 testes)
 
-### 7.1 - GET /empresas/1/configuracoes
+### 6.1 - Detalhar pedido existente
 
-- Esperado: 200, { empresa_id, aceita_entrega, aceita_retirada, taxa_entrega, telefone, endereco, horario_abertura, horario_fechamento, formas_pagamento_aceitas }
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, pedido completo com itens
 
-### 7.2 - GET /empresas/999/configuracoes
+### 6.2 - Detalhar pedido inexistente
 
-- Esperado: 403 (rota protegida sem permissão)
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/999`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `404`
 
-### 7.9 - GET /empresas/999999/configuracoes (com permissão superadmin)
+### 6.3 - Listar sem filtros
 
-- Esperado: 404 (com permissão para acessar a empresa da rota, mas empresa inexistente)
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`
 
-### 7.3 - PATCH /empresas/1/configuracoes
+### 6.4 - Filtrar por status valido
 
-- Body: { "taxa_entrega": 15.00 }
-- Esperado: 200
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos?status=em_preparo`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, apenas `status=em_preparo`
 
-### 7.4 - PATCH com taxa negativa
+### 6.5 - Filtrar por status invalido
 
-- Body: { "taxa_entrega": -5 }
-- Esperado: 400
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos?status=xyz`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `400`
 
-### 7.5 - PATCH com ambos false
+### 6.6 - Filtrar por intervalo de datas
 
-- Body: { "aceita_entrega": false, "aceita_retirada": false }
-- Esperado: 400, error: "empresa deve aceitar..."
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos?data_inicio=2026-03-20&data_fim=2026-03-24`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, apenas intervalo informado
 
-### 7.6 - PATCH com horário válido
+### 6.7 - Data invalida
 
-- Body: { "horario_abertura": "08:00:00", "horario_fechamento": "22:00:00" }
-- Esperado: 200
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos?data_inicio=abc`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `400`
 
-### 7.7 - PATCH com horário inválido
+### 6.8 - Filtros combinados
 
-- Body: { "horario_abertura": "25:00:00" }
-- Esperado: 400
-
-### 7.8 - PATCH múltiplos campos
-
-- Esperado: 200, todos atualizados
-
----
-
-## ✅ PASSO 8: Autenticação + JWT (15 testes)
-
-**Pré-requisito**:
-
-- Usuário criado:
-- (Use senha: 123456 e faça hash com bcrypt antes)
-- .env com JWT_SECRET=seu_secret e JWT_EXPIRES_IN=8h
-
-### 8.1 - POST /auth/login (válido)
-
-- Body: { "email": "admin@test.com", "senha": "123456" }
-- Esperado: 200, { token: "eyJ...", usuario: { id, nome, email, perfil, empresa_id } }
-
-### 8.2 - POST /auth/login (email inexistente)
-
-- Body: { "email": "inexistente@test.com", "senha": "123456" }
-- Esperado: 401, error: "credenciais inválidas"
-
-### 8.3 - POST /auth/login (senha errada)
-
-- Body: { "email": "admin@test.com", "senha": "errada" }
-- Esperado: 401
-
-### 8.4 - POST /auth/login (email vazio)
-
-- Body: { "email": "", "senha": "123456" }
-- Esperado: 400
-
-### 8.5 - POST /auth/login (senha vazia)
-
-- Body: { "email": "admin@test.com", "senha": "" }
-- Esperado: 400
-
-### 8.6 - GET /empresas/1/produtos (sem token, público)
-
-- Esperado: 200 (endpoint público)
-
-### 8.7 - POST /empresas/1/produtos (sem token, protegido)
-
-- Esperado: 401, error: "token ausente"
-
-### 8.8 - POST /empresas/1/produtos (com token válido)
-
-- Header: Authorization: Bearer {token_de_8.1}
-- Body: produto válido
-- Esperado: 201
-
-### 8.9 - POST /empresas/1/produtos (token fake)
-
-- Header: Authorization: Bearer token_fake_xyz
-- Esperado: 401, error: "token inválido ou expirado"
-
-### 8.10 - POST /empresas/1/produtos (token expirado)
-
-- Nota: Precisa de token vencido, ignore se não conseguir simular
-- Esperado: 401, error: "token inválido ou expirado"
-
-### 8.11 - PATCH /empresas/1/pedidos/{id}/status (token de outra empresa)
-
-- Ação: Criar usuário em empresa 2, fazer login
-- Header: Authorization: Bearer {token_empresa_2}
-- URL: /empresas/1/pedidos/{id_empresa_1}/status
-- Esperado: 403, error: "acesso negado..."
-
-### 8.12 - GET /empresas/1/estoque (token válido)
-
-- Esperado: 200
-
-### 8.13 - PATCH /empresas/1/estoque/{id} (token válido)
-
-- Esperado: 200
-
-### 8.14 - GET /empresas/1/configuracoes (token válido)
-
-- Esperado: 200
-
-### 8.15 - PATCH /empresas/1/configuracoes (token válido)
-
-- Esperado: 200
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/pedidos?status=pendente&data_inicio=2026-03-20&data_fim=2026-03-24`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, aplicando regra AND
 
 ---
 
-## ✅ PASSO 9: Webhook WhatsApp (fundação + idempotência) (5 testes)
+## PASSO 7 - Configuracoes da Empresa (8 testes)
 
-### 9.1 - GET /webhook/whatsapp (handshake válido)
+### 7.1 - Buscar configuracoes da empresa
 
-- Query: `hub.mode=subscribe`, `hub.verify_token={token_correto}`, `hub.challenge=12345`
-- Esperado: 200, body `12345`
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`, objeto completo de configuracoes
 
-### 9.2 - GET /webhook/whatsapp (handshake inválido)
+### 7.2 - Sem permissao na empresa da rota
 
-- Query: `hub.mode=subscribe`, `hub.verify_token=token_invalido`, `hub.challenge=12345`
-- Esperado: 403, `error: "verificação inválida"`
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/999/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `403`
 
-### 9.3 - POST /webhook/whatsapp (evento válido)
+### 7.9 - Empresa inexistente com permissao de rota
 
-- Esperado: 200, `status: "processado"`
-- Persistência mínima: `id_externo`, `empresa_id` (quando presente), `telefone_origem`, `payload_bruto`, `status_processamento`, timestamps
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/999999/configuracoes`
+- Header: token com permissao de superadmin
+- Body: nao usa
+- Retorno esperado: `404`
 
-### 9.4 - POST /webhook/whatsapp (evento duplicado)
+### 7.3 - Atualizar taxa de entrega
 
-- Enviar o mesmo `id_externo` duas vezes
-- Esperado: segunda resposta com `status: "duplicado"`
-- Garantia: sem novo processamento e sem novo registro para o mesmo `id_externo`
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
 
-### 9.5 - POST /webhook/whatsapp (payload inválido)
+```json
+{
+  "taxa_entrega": 15
+}
+```
 
-- Sem identificador único da mensagem/evento
-- Esperado: 400, `error: "payload inválido"`
-- Persistência: evento auditável com `status_processamento: "invalido"`
+- Retorno esperado: `200`
+
+### 7.4 - Taxa negativa
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "taxa_entrega": -5
+}
+```
+
+- Retorno esperado: `400`
+
+### 7.5 - Ambos recebimentos false
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "aceita_entrega": false,
+  "aceita_retirada": false
+}
+```
+
+- Retorno esperado: `400`, `error: "empresa deve aceitar..."`
+
+### 7.6 - Horario valido
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "horario_abertura": "08:00:00",
+  "horario_fechamento": "22:00:00"
+}
+```
+
+- Retorno esperado: `200`
+
+### 7.7 - Horario invalido
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "horario_abertura": "25:00:00"
+}
+```
+
+- Retorno esperado: `400`
+
+### 7.8 - Atualizacao multipla
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: combinar varios campos validos
+- Retorno esperado: `200`, todos atualizados
 
 ---
 
-## ✅ PASSO 10: Máquina de estados WhatsApp (MVP seguro) (6 testes)
+## PASSO 8 - Autenticacao + JWT (15 testes)
 
-### 10.1 - Fluxo feliz até `pronto_para_confirmacao`
+Pre-requisito:
 
-- Primeira mensagem inicia sessão em `aguardando_nome`
-- Nome válido avança para `aguardando_item_menu` com cardápio numerado
-- Item válido avança para `aguardando_quantidade_item`
-- Quantidade válida avança para `aguardando_mais_itens`
-- Opção `2` (não adicionar mais) avança para `pronto_para_confirmacao`
-- Esperado: pré-resumo do carrinho sem criar pedido definitivo
+- usuario criado (`senha: 123456`, hash com bcrypt no banco)
+- variaveis JWT configuradas
 
-### 10.2 - Item inválido no menu
+### 8.1 - Login valido
 
-- Em `aguardando_item_menu`, enviar número inexistente
-- Esperado: mensagem guiada de erro e permanência em `aguardando_item_menu`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/auth/login`
+- Body:
 
-### 10.3 - Quantidade inválida
+```json
+{
+  "email": "admin@test.com",
+  "senha": "123456"
+}
+```
 
-- Em `aguardando_quantidade_item`, enviar valor inválido
-- Esperado: mensagem guiada e permanência em `aguardando_quantidade_item`
+- Retorno esperado: `200`, token e dados de usuario
 
-### 10.4 - Opção inválida no “mais itens”
+### 8.2 - Email inexistente
 
-- Em `aguardando_mais_itens`, enviar opção diferente de `1` ou `2`
-- Esperado: mensagem guiada e permanência em `aguardando_mais_itens`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/auth/login`
+- Body:
 
-### 10.5 - Reentrada com sessão existente
+```json
+{
+  "email": "inexistente@test.com",
+  "senha": "123456"
+}
+```
 
-- Com sessão ativa, próxima mensagem deve seguir estado persistido
-- Esperado: retomada determinística sem perder contexto
+- Retorno esperado: `401`, `error: "credenciais invalidas"`
+
+### 8.3 - Senha errada
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/auth/login`
+- Body:
+
+```json
+{
+  "email": "admin@test.com",
+  "senha": "errada"
+}
+```
+
+- Retorno esperado: `401`
+
+### 8.4 - Email vazio
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/auth/login`
+- Body:
+
+```json
+{
+  "email": "",
+  "senha": "123456"
+}
+```
+
+- Retorno esperado: `400`
+
+### 8.5 - Senha vazia
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/auth/login`
+- Body:
+
+```json
+{
+  "email": "admin@test.com",
+  "senha": ""
+}
+```
+
+- Retorno esperado: `400`
+
+### 8.6 - Rota publica sem token
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Body: nao usa
+- Retorno esperado: `200`
+
+### 8.7 - Rota protegida sem token
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Body: produto valido
+- Retorno esperado: `401`, `error: "token ausente"`
+
+### 8.8 - Rota protegida com token valido
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: produto valido
+- Retorno esperado: `201`
+
+### 8.9 - Token fake
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Header: `Authorization: Bearer token_fake_xyz`
+- Body: produto valido
+- Retorno esperado: `401`, `error: "token invalido ou expirado"`
+
+### 8.10 - Token expirado
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/empresas/1/produtos`
+- Header: `Authorization: Bearer <token expirado>`
+- Body: produto valido
+- Retorno esperado: `401`, `error: "token invalido ou expirado"`
+
+### 8.11 - Token de outra empresa
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/pedidos/{{PEDIDO_ID}}/status`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_2}}`
+- Body:
+
+```json
+{
+  "status": "em_preparo"
+}
+```
+
+- Retorno esperado: `403`, `error: "acesso negado..."`
+
+### 8.12 - Estoque com token valido
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/estoque`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`
+
+### 8.13 - Atualizar estoque com token valido
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/estoque/{{PRODUTO_ID}}`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "quantidade": 60
+}
+```
+
+- Retorno esperado: `200`
+
+### 8.14 - Configuracoes com token valido
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body: nao usa
+- Retorno esperado: `200`
+
+### 8.15 - Atualizar configuracoes com token valido
+
+- Metodo: `PATCH`
+- URL: `{{BASE_URL}}/empresas/1/configuracoes`
+- Header: `Authorization: Bearer {{TOKEN_EMPRESA_1}}`
+- Body:
+
+```json
+{
+  "taxa_entrega": 10
+}
+```
+
+- Retorno esperado: `200`
+
+---
+
+## PASSO 9 - Webhook WhatsApp (fundacao + idempotencia) (5 testes)
+
+### 9.1 - Handshake valido
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/webhook/whatsapp?hub.mode=subscribe&hub.verify_token=<token_correto>&hub.challenge=12345`
+- Body: nao usa
+- Retorno esperado: `200` com body `12345`
+
+### 9.2 - Handshake invalido
+
+- Metodo: `GET`
+- URL: `{{BASE_URL}}/webhook/whatsapp?hub.mode=subscribe&hub.verify_token=token_invalido&hub.challenge=12345`
+- Body: nao usa
+- Retorno esperado: `403`, `error: "verificacao invalida"`
+
+### 9.3 - Evento valido
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Body: payload valido com identificador unico (`id_externo`)
+- Retorno esperado: `200`, `status: "processado"`
+
+### 9.4 - Evento duplicado
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Body: reenviar exatamente o mesmo `id_externo`
+- Retorno esperado: segunda resposta com `status: "duplicado"`
+
+### 9.5 - Payload invalido
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Body: sem identificador unico
+- Retorno esperado: `400`, `error: "payload invalido"`
+
+---
+
+## PASSO 10 - Maquina de estados WhatsApp (MVP seguro) (6 testes)
+
+URL base para todos os cenarios do passo: `POST {{BASE_URL}}/webhook/whatsapp`
+
+### 10.1 - Fluxo feliz ate pronto_para_confirmacao
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: enviar mensagens em sequencia (inicio -> nome -> item -> quantidade -> mais_itens=2)
+- Retorno esperado: pre-resumo do carrinho, sem criar pedido definitivo
+
+### 10.2 - Item invalido no menu
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: em `aguardando_item_menu`, enviar numero inexistente
+- Retorno esperado: mensagem guiada e permanencia em `aguardando_item_menu`
+
+### 10.3 - Quantidade invalida
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: em `aguardando_quantidade_item`, enviar valor invalido
+- Retorno esperado: mensagem guiada e permanencia em `aguardando_quantidade_item`
+
+### 10.4 - Opcao invalida em mais_itens
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: em `aguardando_mais_itens`, enviar diferente de `1` ou `2`
+- Retorno esperado: mensagem guiada e permanencia em `aguardando_mais_itens`
+
+### 10.5 - Reentrada com sessao existente
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: com sessao ativa, enviar proxima mensagem
+- Retorno esperado: retomada deterministica no estado persistido
 
 ### 10.6 - Isolamento por empresa e telefone
 
-- Sessões independentes para `(empresa_id, telefone)` distintos
-- Esperado: estados/carrinhos isolados sem contaminação cruzada
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: rodar fluxos paralelos para pares `(empresa_id, telefone)` diferentes
+- Retorno esperado: estados/carrinhos isolados
 
 ---
 
-## ✅ PASSO 11: WhatsApp segunda metade do fluxo (9 testes)
+## PASSO 11 - WhatsApp segunda metade do fluxo (9 testes)
 
-### 11.1 - Entrega completa até `pronto_para_criar_pedido`
+URL base para todos os cenarios do passo: `POST {{BASE_URL}}/webhook/whatsapp`
 
-- Após `pronto_para_confirmacao`, avançar para recebimento
-- Escolher entrega, informar endereço, confirmar endereço, escolher dinheiro, informar troco
-- Esperado: estado final `pronto_para_criar_pedido` com pré-resumo final
+### 11.1 - Entrega completa ate pronto_para_criar_pedido
 
-### 11.2 - Retirada completa até `pronto_para_criar_pedido`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: apos confirmacao do carrinho, seguir entrega + endereco + pagamento dinheiro + troco
+- Retorno esperado: estado `pronto_para_criar_pedido` com pre-resumo final
 
-- Escolher retirada e forma de pagamento não dinheiro
-- Esperado: estado final `pronto_para_criar_pedido` sem endereço no resumo
+### 11.2 - Retirada completa ate pronto_para_criar_pedido
+
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: escolher retirada + pagamento nao dinheiro
+- Retorno esperado: `pronto_para_criar_pedido` sem endereco
 
 ### 11.3 - Empresa apenas entrega
 
-- Configuração: `aceita_entrega=true`, `aceita_retirada=false`
-- Esperado: após confirmação do carrinho, seguir direto para endereço
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Pre-condicao: `aceita_entrega=true`, `aceita_retirada=false`
+- Retorno esperado: avancar direto para endereco
 
 ### 11.4 - Empresa apenas retirada
 
-- Configuração: `aceita_entrega=false`, `aceita_retirada=true`
-- Esperado: após confirmação do carrinho, seguir direto para forma de pagamento
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Pre-condicao: `aceita_entrega=false`, `aceita_retirada=true`
+- Retorno esperado: avancar direto para forma de pagamento
 
-### 11.5 - Endereço inválido e correção
+### 11.5 - Endereco invalido e correcao
 
-- Endereço vazio deve manter estado `aguardando_endereco_entrega`
-- Em confirmação, opção `2` deve permitir editar endereço
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: enviar endereco vazio e depois editar via opcao `2` na confirmacao
+- Retorno esperado: permanecer/retornar corretamente para `aguardando_endereco_entrega`
 
-### 11.6 - Pagamento não permitido
+### 11.6 - Pagamento nao permitido
 
-- Opção inválida em `aguardando_forma_pagamento`
-- Esperado: mensagem guiada e permanência no estado
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: opcao invalida em `aguardando_forma_pagamento`
+- Retorno esperado: mensagem guiada e permanencia no estado
 
-### 11.7 - Dinheiro com troco sim e não
+### 11.7 - Dinheiro com troco sim e nao
 
-- Caminho `troco=não` vai direto para `pronto_para_criar_pedido`
-- Caminho `troco=sim` exige valor e só então avança
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: testar caminho `troco=nao` e `troco=sim`
+- Retorno esperado: sem troco vai direto; com troco exige valor antes de avancar
 
 ### 11.8 - Isolamento por empresa e telefone
 
-- Fluxos paralelos por `(empresa_id, telefone)` não se misturam
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: fluxos paralelos por empresa/telefone
+- Retorno esperado: sem mistura de sessoes
 
-### 11.9 - Reentrada após estados críticos
+### 11.9 - Reentrada apos estados criticos
 
-- Retomada determinística em cada estado novo:
-  `aguardando_tipo_recebimento`,
-  `aguardando_endereco_entrega`,
-  `aguardando_confirmacao_endereco`,
-  `aguardando_forma_pagamento`,
-  `aguardando_necessidade_troco`,
-  `aguardando_troco_para`,
-  `pronto_para_criar_pedido`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: retomar em cada estado critico listado na suite
+- Retorno esperado: retomada deterministica em todos
 
 ---
 
-## ✅ PASSO 12: Finalização do pedido WhatsApp (9 testes)
+## PASSO 12 - Finalizacao do pedido WhatsApp (9 testes)
+
+URL base para todos os cenarios do passo: `POST {{BASE_URL}}/webhook/whatsapp`
 
 ### 12.1 - Fluxo feliz cria pedido e baixa estoque
 
-- Em `pronto_para_criar_pedido`, enviar confirmação final (`1`)
-- Esperado: cria pedido definitivo em `pedidos` + itens em `itens_pedido`
-- Esperado: baixa de estoque consistente
-- Esperado: sessão vai para `concluido` com vínculo `pedido_id_criado`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: em `pronto_para_criar_pedido`, confirmar com opcao `1`
+- Retorno esperado: cria pedido + itens, baixa estoque e sessao `concluido`
 
-### 12.2 - Reenvio da confirmação não duplica pedido
+### 12.2 - Reenvio da confirmacao nao duplica
 
-- Após pedido já concluído, reenviar confirmação
-- Esperado: não criar novo pedido
-- Esperado: resposta idempotente mantendo `concluido`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: apos concluido, reenviar confirmacao
+- Retorno esperado: sem novo pedido; resposta idempotente
 
-### 12.3 - Falha intermediária faz rollback total
+### 12.3 - Falha intermediaria com rollback
 
-- Simular erro interno entre inserção de pedido/itens/baixa estoque
-- Esperado: sem pedido parcial, sem baixa parcial, sessão consistente para retomada
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: simular erro interno entre pedido/itens/estoque
+- Retorno esperado: rollback total sem dados parciais
 
-### 12.4 - Estoque insuficiente com opção 1 (ajuste automático)
+### 12.4 - Estoque insuficiente opcao 1
 
-- Na confirmação, detectar insuficiência
-- Oferecer opções `1/2/3`
-- Opção `1`: ajustar quantidade para disponível e retornar para nova confirmação
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: escolher opcao `1` (ajuste automatico para disponivel)
+- Retorno esperado: retorna para nova confirmacao com carrinho ajustado
 
-### 12.5 - Estoque insuficiente com opção 2 (remoção)
+### 12.5 - Estoque insuficiente opcao 2
 
-- Opção `2`: remover item insuficiente do carrinho
-- Esperado: manter contexto de sessão sem perder estado do restante
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: escolher opcao `2` (remover item insuficiente)
+- Retorno esperado: estado e contexto preservados
 
-### 12.6 - Estoque insuficiente com opção 3 (cancelar finalização)
+### 12.6 - Estoque insuficiente opcao 3
 
-- Opção `3`: cancelar somente a finalização
-- Esperado: permanecer em `pronto_para_criar_pedido` sem criar pedido
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: escolher opcao `3` (cancelar finalizacao)
+- Retorno esperado: permanece em `pronto_para_criar_pedido`
 
-### 12.7 - Carrinho vazio após ajustes/remoções
+### 12.7 - Carrinho vazio apos ajustes
 
-- Quando carrinho zera após tratativa de estoque
-- Esperado: retornar com segurança para seleção de itens (`aguardando_item_menu`)
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: remover/ajustar ate carrinho zerar
+- Retorno esperado: volta para `aguardando_item_menu`
 
 ### 12.8 - Isolamento por empresa e telefone
 
-- Fluxos paralelos em empresas/telefones distintos
-- Esperado: criação/estado isolados por `(empresa_id, telefone)`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: finalizar fluxos em paralelo para pares distintos
+- Retorno esperado: criacao e estado isolados
 
-### 12.9 - Regressão cumulativa completa
+### 12.9 - Regressao cumulativa completa
 
-- Rodar suíte inteira após o PASSO 12
-- Esperado: tudo verde sem regressão dos passos anteriores
+- Metodo: comando de regressao
+- Comando:
+
+```bash
+npm --prefix backend test -- --runInBand --testPathPatterns tests/integration/suite.test.js
+```
+
+- Retorno esperado: tudo verde sem regressao
 
 ---
 
-## ✅ PASSO 13: Hardening de produção (5 testes)
+## PASSO 13 - Hardening de producao (5 testes)
 
-### 13.1 - Assinatura válida aceita evento
+### 13.1 - Assinatura valida aceita evento
 
-- Com `WEBHOOK_SIGNING_SECRET` configurado
-- Enviar payload com header `x-hub-signature-256` válido
-- Esperado: 200, `status: "processado"`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Header: `x-hub-signature-256: sha256=<hash_valido>`
+- Body: payload valido
+- Retorno esperado: `200`, `status: "processado"`
 
-### 13.2 - Assinatura inválida rejeita evento
+### 13.2 - Assinatura invalida rejeita evento
 
-- Com `WEBHOOK_SIGNING_SECRET` configurado
-- Enviar assinatura inválida
-- Esperado: 401, `error: "assinatura inválida"`, código padronizado
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Header: `x-hub-signature-256: sha256=<hash_invalido>`
+- Body: payload valido
+- Retorno esperado: `401`, `error: "assinatura invalida"`
 
 ### 13.3 - Rate limit bloqueia excesso
 
-- Configurar `WEBHOOK_RATE_LIMIT_MAX` baixo na janela
-- Estourar chamadas para mesma origem
-- Esperado: 429, `error: "limite de requisições excedido"`
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: estourar chamadas acima de `WEBHOOK_RATE_LIMIT_MAX` na janela
+- Retorno esperado: `429`, `error: "limite de requisicoes excedido"`
 
-### 13.4 - Requisição dentro do limite segue funcional
+### 13.4 - Dentro do limite segue funcional
 
-- Ainda com rate limit ativo
-- Chamadas abaixo do teto
-- Esperado: processamento normal (200)
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Acao: enviar volume abaixo do limite
+- Retorno esperado: `200`, processamento normal
 
-### 13.5 - Correlação e observabilidade mínima
+### 13.5 - Correlacao e observabilidade minima
 
-- Enviar `x-correlation-id`
-- Esperado: `correlation_id` no response + log estruturado com correlação
+- Metodo: `POST`
+- URL: `{{BASE_URL}}/webhook/whatsapp`
+- Header: `x-correlation-id: <id_unico>`
+- Body: payload valido
+- Retorno esperado: `correlation_id` no response e log estruturado correlacionavel
 
 ---
 
-## 📌 COMO USAR
+## Como usar no Thunder Client (sem mudar a suite)
 
-No Thunder Client, organize em pastas:
+1. Crie uma collection chamada `Pede Mais - Suite Manual`.
+2. Crie 13 pastas (Passo 1 ate Passo 13).
+3. Em cada request, copie metodo/URL/body exatamente deste documento.
+4. Execute em ordem cumulativa (nao pular passos).
+5. Antes de commit, rode tambem a suite automatizada sem alteracoes:
 
-- Passo 1 - Bootstrap
-- Passo 2 - Produtos
-- Passo 3 - Estoque
-- Passo 4 - Pedidos
-- Passo 5 - Status
-- Passo 6 - Filtros
-- Passo 7 - Config
-- Passo 8 - Auth
-
-Antes de cada COMMIT:
-
-- Execute testes do Passo 1 até Passo atual
-- Se algum falhar, NÃO commita
-- Dica: Salve templates de request, mude só IDs/bodies
+```bash
+npm --prefix backend run test:ci
+```

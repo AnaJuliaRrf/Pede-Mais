@@ -1,15 +1,15 @@
-# Relatorio de Homologacao - Entrega Academica
+# Relatório de Homologação do Backend
 
 ## Resumo executivo
 
-Backend validado para entrega academica com foco em estabilidade e reprodutibilidade.
+Backend validado para entrega acadêmica com foco em estabilidade e reprodutibilidade.
 Foram executadas duas rodadas consecutivas da suite cumulativa completa, ambas verdes.
 O smoke funcional local (health, auth, produtos, webhook e fluxo WhatsApp com finalizacao) foi validado com sucesso.
-Nao foram detectados testes flaky nesta homologacao.
+Não foram detectados testes flaky nesta homologação.
 
-## Evidencias de execucao
+## Evidências de execução
 
-### Suite cumulativa completa - execucao 1
+### Suite cumulativa completa - execução 1
 
 - Comando:
   - `npm --prefix backend test -- --runInBand --testPathPatterns tests/integration/suite.test.js`
@@ -18,7 +18,7 @@ Nao foram detectados testes flaky nesta homologacao.
   - Tests: 97 passed, 97 total
   - Fail: 0
 
-### Suite cumulativa completa - execucao 2 (consecutiva)
+### Suite cumulativa completa - execução 2 (consecutiva)
 
 - Comando:
   - `npm --prefix backend test -- --runInBand --testPathPatterns tests/integration/suite.test.js`
@@ -32,18 +32,18 @@ Nao foram detectados testes flaky nesta homologacao.
 - Escopo validado:
   - health
   - auth
-  - produtos publicos
-  - idempotencia do webhook
-  - assinatura valida/invalida
+  - produtos públicos
+  - idempotência do webhook
+  - assinatura válida/inválida
   - rate limit
-  - fluxo WhatsApp ate finalizacao com criacao de pedido
+  - fluxo WhatsApp até finalização com criação de pedido
 - Resultado objetivo:
   - Sem falhas observadas
-  - Evidencia de comando executado com status final verde
+  - Evidência de comando executado com status final verde
 
-## Resultados numericos consolidados
+## Resultados númericos consolidados
 
-- Passos cobertos por regressao: 1 a 13
+- Passos cobertos por regressão: 1 a 13
 - Total de testes na suite cumulativa: 97
 - Pass (execucao 1): 97
 - Pass (execucao 2): 97
@@ -53,41 +53,31 @@ Nao foram detectados testes flaky nesta homologacao.
 ## Como subir (ambiente local)
 
 1. Configurar `backend/.env.test` a partir de `backend/.env.test.example`.
-2. Instalar dependencias:
+2. Instalar dependências:
    - `npm --prefix backend ci`
 3. Subir backend:
    - `npm --prefix backend start`
 
 ## Como testar
 
-1. Regressao cumulativa:
+1. Regressão cumulativa:
    - `npm --prefix backend test -- --runInBand --testPathPatterns tests/integration/suite.test.js`
 2. Smoke local:
-   - executar casos criticos documentados em `OPERACAO-PRODUCAO.md` secao de smoke
+   - executar casos críticos documentados em `OPERACAO-PRODUCAO.md` seção de smoke
 
-## Como demonstrar ao professor
+## Limitações conhecidas
 
-1. Apresentar `GET /health` com 200.
-2. Demonstrar login em `/auth/login`.
-3. Mostrar rota publica de produtos (`/empresas/1/produtos`).
-4. Demonstrar fluxo WhatsApp ate criacao/finalizacao de pedido.
-5. Demonstrar idempotencia do webhook com mesmo `id_externo`.
-6. Demonstrar seguranca do webhook: assinatura invalida (401) e rate limit (429).
-7. Exibir resultado da suite cumulativa 2x consecutivas (97/97 em ambas).
-
-## Limitacoes conhecidas
-
-- Rate limit em memoria por processo (nao distribuido entre multiplas instancias).
-- Logs estruturados enviados via `console.log` (sem pipeline central obrigatoria neste contexto academico).
-- Dependencia de variaveis de ambiente corretas para assinatura do webhook em ambiente alvo.
+- Rate limit em memória por processo (não distribuido entre múltiplas instâncias).
+- Logs estruturados enviados via `console.log` (sem pipeline central obrigatória neste contexto acadêmico).
+- Dependência de variáveis de ambiente corretas para assinatura do webhook em ambiente alvo.
 
 ## Riscos residuais
 
-- Configuracao incorreta de variaveis sensiveis em ambiente de demonstracao.
+- Configuração incorreta de variáveis sensíveis em ambiente de demonstração.
 - Carga incomum pode exigir ajuste fino de `WEBHOOK_RATE_LIMIT_*`.
 
-## Conclusao final
+## Conclusão final
 
-- Pronto para entrega academica: sim.
-- Sem regressao detectada entre os passos 1 a 13.
-- Evidencias objetivas registradas e reprodutiveis.
+- Backend pronto para entrega acadêmica.
+- Sem regressão detectada entre os passos 1 a 13.
+- Evidências objetivas registradas e reprodutíveis.
