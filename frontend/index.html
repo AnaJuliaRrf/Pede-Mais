@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+
+  <link rel="stylesheet" href="./css/login.css"/>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Ícones -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+</head>
+<body>
+
+  <main class="login-container">
+
+    <!-- Lado esquerdo -->
+    <section class="left-side">
+
+      <div class="overlay"></div>
+
+      <div class="left-content">
+        <h1>Seu negócio organizado.</h1>
+
+        <p>
+          Gerencie pedidos, estoque e atendimento do seu negócio
+          em um só lugar. Mais organização, agilidade e controle
+          para suas vendas.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- Lado direito -->
+    <section class="right-side">
+
+      <div class="login-card">
+
+        <h2>Login</h2>
+
+        <form id="loginForm">
+
+          <!-- Email -->
+          <div class="input-group">
+            <label>Email Address</label>
+
+            <div class="input-box">
+              <i class="fa-regular fa-user"></i>
+
+              <input
+                type="email"
+                id="email"
+                placeholder="email@gmail.com"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- Senha -->
+          <div class="input-group">
+
+            <div class="password-header">
+              <label>Senha</label>
+
+              <a href="#">Esqueci minha senha</a>
+            </div>
+
+            <div class="input-box">
+              <i class="fa-solid fa-lock"></i>
+
+              <input
+                type="password"
+                id="password"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+          </div>
+
+          <!-- Mostrar senha -->
+          <div class="show-password">
+            <input type="checkbox" id="showPassword" />
+            <label for="showPassword">Mostrar senha</label>
+          </div>
+
+          <!-- Botão -->
+          <button type="submit" class="login-btn">
+            Entrar
+          </button>
+
+          <!-- Cadastro -->
+          <p class="register-text">
+            Nova conta?
+            <a href="#">clique aqui para criar</a>
+          </p>
+
+        </form>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="./js/auth.js"></script>
+
+</body>
+</html>
