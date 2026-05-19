@@ -1,0 +1,212 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+
+  background: linear-gradient(
+    180deg,
+    #2e9cff 0%,
+    #001b87 100%
+  );
+}
+
+/* CONTAINER */
+
+.register-container {
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: right;
+
+  padding: 0px;
+}
+
+/* FORM SECTION */
+
+.form-section {
+  width: 100%;
+  max-width: 1200px;
+  background: #f5f5f5;
+  border-radius: 80px 0 0 80px;
+  padding: 50px 60px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+/* HEADER */
+
+.header {
+  margin-bottom: 40px;
+}
+
+.header h1 {
+  font-size: 48px;
+  color: #0a0330;
+  margin-bottom: 10px;
+}
+
+.header p {
+  color: #333;
+  font-size: 15px;
+  max-width: 500px;
+  line-height: 1.5;
+}
+
+/* FORM */
+
+form {
+  display: flex;
+  gap: 60px;
+}
+
+.column {
+  flex: 1;
+}
+
+.column h2 {
+  font-size: 24px;
+  margin-bottom: 25px;
+  color: #222;
+}
+
+/* INPUTS */
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 22px;
+}
+
+.input-group label {
+  margin-bottom: 7px;
+  font-size: 14px;
+  color: #222;
+}
+
+.input-group input {
+  height: 42px;
+
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+
+  padding: 0 12px;
+
+  outline: none;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  background: white;
+}
+
+.input-group input:focus {
+  border-color: #001b87;
+}
+
+/* ROWS */
+
+.row {
+  display: flex;
+  gap: 16px;
+}
+
+.row .input-group {
+  flex: 1;
+}
+
+.small {
+  max-width: 120px;
+}
+
+.tiny {
+  max-width: 70px;
+}
+
+.full {
+  width: 100%;
+}
+
+/* BOTTOM */
+
+.bottom-row {
+  display: flex;
+  align-items: end;
+  gap: 20px;
+}
+
+.password-field {
+  flex: 1;
+}
+
+button {
+  height: 45px;
+  min-width: 170px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #082a97;
+  color: white;
+
+  font-size: 16px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #001b87;
+  transform: translateY(-2px);
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 1100px) {
+
+  form {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+}
+
+@media (max-width: 768px) {
+
+  .form-section {
+    border-radius: 40px;
+    padding: 35px 25px;
+  }
+
+  .header h1 {
+    font-size: 36px;
+  }
+
+  .row {
+    flex-direction: column;
+  }
+
+  .small,
+  .tiny {
+    max-width: 100%;
+  }
+
+  .bottom-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  button {
+    width: 100%;
+  }
+
+}
