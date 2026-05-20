@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   verificarAutenticacao();
+  setTodayDate();
   carregarDashboard();
 });
 
@@ -66,4 +67,16 @@ function atualizarTabela(pedidos) {
       </tr>
     `;
   });
+}
+
+function setTodayDate() {
+  const el = document.querySelector('.date-box');
+  if (!el) return;
+
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = now.toLocaleString('pt-BR', { month: 'long' });
+  const year = now.getFullYear();
+
+  el.textContent = `Hoje, ${day} de ${month} de ${year}`;
 }

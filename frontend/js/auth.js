@@ -29,13 +29,13 @@ async function login(email, senha) {
 }
 
 // Verifica se o usuário está autenticado
-function verificarAutenticacao() {
-  const token = localStorage.getItem("token");
+//function verificarAutenticacao() {
+//  const token = localStorage.getItem("token");
 
-  if (!token) {
-    window.location.href = "index.html";
-  }
-}
+//  if (!token) {
+//    window.location.href = "index.html";
+//  }
+//}
 
 // Logout
 function logout() {

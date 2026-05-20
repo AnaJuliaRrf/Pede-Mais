@@ -31,26 +31,35 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
 
-      <div class="menu-toggle">
+      <div class="sidebar-logo">
         <i class="fa-solid fa-bars"></i>
       </div>
 
-      <nav>
+      <nav class="sidebar-menu">
 
-        <a href="#" class="active">
+        <a href="dashboard.html" class="menu-item active">
           <i class="fa-solid fa-house"></i>
+          <span>Dashboard</span>
         </a>
 
-        <a href="#">
+        <a href="pedidos.html" class="menu-item">
           <i class="fa-solid fa-cart-shopping"></i>
+          <span>Pedidos</span>
         </a>
 
-        <a href="#">
+        <a href="estoque.html" class="menu-item">
+          <i class="fa-solid fa-box"></i>
+          <span>Estoque</span>
+        </a>
+
+        <a href="produtos.html" class="menu-item">
           <i class="fa-solid fa-pizza-slice"></i>
+          <span>Produtos</span>
         </a>
 
-        <a href="#">
-          <i class="fa-solid fa-chart-line"></i>
+        <a href="clientes.html" class="menu-item">
+          <i class="fa-solid fa-users"></i>
+          <span>Clientes</span>
         </a>
 
       </nav>
@@ -317,6 +326,7 @@
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/dashboard.js"></script>
+  <script>setTodayDate();</script>
 
 </body>
 </html>
