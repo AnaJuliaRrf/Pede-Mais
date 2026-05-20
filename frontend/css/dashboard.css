@@ -318,6 +318,85 @@ tbody tr {
   font-size: 14px;
 }
 
+/* SIDEBAR */
+
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+
+  background: linear-gradient(
+    180deg,
+    #2e9cff 0%,
+    #001b87 100%
+  );
+
+  padding: 24px 16px;
+
+  display: flex;
+  flex-direction: column;
+
+  position: fixed;
+  left: 0;
+  top: 0;
+}
+
+.logo {
+  color: white;
+  font-size: 22px;
+
+  margin-bottom: 40px;
+  padding-left: 10px;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-item {
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 0 16px;
+
+  border-radius: 10px;
+
+  color: white;
+  text-decoration: none;
+
+  transition: 0.3s;
+}
+
+.nav-item i {
+  font-size: 15px;
+}
+
+.nav-item span {
+  font-size: 14px;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* ITEM ATIVO */
+
+.nav-item.active {
+  background: #f5a524;
+  color: white;
+}
+
+/* MAIN */
+
+.main-content {
+  margin-left: 240px;
+  padding: 30px;
+}
+
 /* RESPONSIVO */
 
 @media (max-width: 1200px) {
