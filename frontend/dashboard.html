@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Dashboard</title>
+
+  <link rel="stylesheet" href="./css/dashboard.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+</head>
+
+<body>
+
+  <div class="dashboard-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <div class="menu-toggle">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+
+      <nav>
+
+        <a href="#" class="active">
+          <i class="fa-solid fa-house"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-solid fa-cart-shopping"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-solid fa-pizza-slice"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-solid fa-chart-line"></i>
+        </a>
+
+      </nav>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+
+        <div>
+          <h1>Dashboard</h1>
+          <span>Visão geral do seu negócio</span>
+        </div>
+
+        <div class="topbar-right">
+
+          <div class="date-box">
+            Hoje, 07 de junho de 2025
+          </div>
+
+          <div class="profile">
+
+            <span>Nome da empresa</span>
+
+            <img
+              src="https://i.pravatar.cc/40"
+              alt="profile"
+            />
+
+          </div>
+
+        </div>
+
+      </header>
+
+      <!-- CARDS -->
+      <section class="cards-grid">
+
+        <!-- CARD -->
+        <div class="card">
+
+          <div>
+            <p>Pedido de hoje</p>
+            <h2 id="pedidosHoje" class="danger">0</h2>
+          </div>
+
+          <div class="chart-circle">
+            Grafico
+          </div>
+
+        </div>
+
+        <!-- CARD -->
+        <div class="card">
+
+          <div>
+            <p>Estoque baixo</p>
+            <h2 id="estoqueBaixo" class="warning">0</h2>
+          </div>
+
+          <div class="chart-circle">
+            Grafico
+          </div>
+
+        </div>
+
+        <!-- CARD -->
+        <div class="card">
+
+          <div>
+            <p>Faturamento</p>
+            <h2 id="faturamentoHoje" class="success">R$ 0,00</h2>
+          </div>
+
+          <div class="chart-circle">
+            Grafico
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- GRÁFICOS -->
+      <section class="charts-grid">
+
+        <!-- STATUS -->
+        <div class="chart-card">
+
+          <h3>Pedido por status</h3>
+
+          <div class="chart-content">
+
+            <div class="big-chart">
+              Grafico
+            </div>
+
+            <div class="legend">
+
+              <div class="legend-item">
+                <span class="dot red"></span>
+                Cancelados
+              </div>
+
+              <div class="legend-item">
+                <span class="dot yellow"></span>
+                Pendentes
+              </div>
+
+              <div class="legend-item">
+                <span class="dot blue"></span>
+                Em preparo
+              </div>
+
+              <div class="legend-item">
+                <span class="dot light-green"></span>
+                Saiu para entrega
+              </div>
+
+              <div class="legend-item">
+                <span class="dot green"></span>
+                Entregue
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- FATURAMENTO -->
+        <div class="chart-card">
+
+          <h3>Faturamento diário</h3>
+
+          <div class="chart-content">
+
+            <div class="money-chart">
+              R$ 200,00
+            </div>
+
+            <div class="legend">
+
+              <div class="legend-item">
+                <span class="dot green"></span>
+                PIX
+              </div>
+
+              <div class="legend-item">
+                <span class="dot dark"></span>
+                Cartão de crédito
+              </div>
+
+              <div class="legend-item">
+                <span class="dot olive"></span>
+                Dinheiro
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- TABLE -->
+      <section class="table-card">
+
+        <div class="table-header">
+          <h3>Resumo de hoje</h3>
+        </div>
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Itens</th>
+              <th>Pagamento</th>
+              <th>Entrega</th>
+              <th>Status</th>
+              <th>Horário</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="tabelaPedidos">
+
+            <tr>
+              <td>#1025</td>
+              <td>Mariana Santos</td>
+              <td>2x Pizza Calabresa</td>
+              <td>Pix</td>
+              <td>Entrega</td>
+              <td>
+                <span class="status preparing">
+                  Em preparo
+                </span>
+              </td>
+              <td>25/05 18:30</td>
+            </tr>
+
+            <tr>
+              <td>#1024</td>
+              <td>João Silva</td>
+              <td>1x Esfiha de Carne, 1x Coca 2l</td>
+              <td>Dinheiro</td>
+              <td>Retirada</td>
+              <td>
+                <span class="status pending">
+                  Pendente
+                </span>
+              </td>
+              <td>25/05 18:20</td>
+            </tr>
+
+            <tr>
+              <td>#1023</td>
+              <td>Ana Paula</td>
+              <td>1x Pizza Portuguesa</td>
+              <td>Cartão</td>
+              <td>Entrega</td>
+              <td>
+                <span class="status delivery">
+                  Saiu para entrega
+                </span>
+              </td>
+              <td>25/05 18:10</td>
+            </tr>
+
+            <tr>
+              <td>#1022</td>
+              <td>Carlos Eduardo</td>
+              <td>2x Esfiha de Frango</td>
+              <td>Pix</td>
+              <td>Entrega</td>
+              <td>
+                <span class="status delivered">
+                  Entregue
+                </span>
+              </td>
+              <td>25/05 17:55</td>
+            </tr>
+
+          </tbody>
+
+        </table>
+
+        <div class="table-footer">
+          <a href="#">Ver todos os pedidos</a>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+
+</body>
+</html>
