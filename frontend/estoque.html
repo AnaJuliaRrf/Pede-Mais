@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Estoque</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./css/estoque.css"/>
+
+  <!-- Fonte -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Ícones -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+
+</head>
+
+<body>
+
+  <div class="dashboard-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <div class="sidebar-logo">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+
+      <nav class="sidebar-menu">
+
+        <a href="dashboard.html" class="menu-item">
+          <i class="fa-solid fa-house"></i>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="pedidos.html" class="menu-item">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span>Pedidos</span>
+        </a>
+
+        <a href="estoque.html" class="menu-item active">
+          <i class="fa-solid fa-box"></i>
+          <span>Estoque</span>
+        </a>
+
+        <a href="produtos.html" class="menu-item">
+          <i class="fa-solid fa-pizza-slice"></i>
+          <span>Produtos</span>
+        </a>
+
+        <a href="clientes.html" class="menu-item">
+          <i class="fa-solid fa-users"></i>
+          <span>Clientes</span>
+        </a>
+
+      </nav>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- HEADER -->
+      <header class="page-header">
+
+        <div>
+
+          <h1>Estoque</h1>
+
+          <p>
+            Controle o estoque de seus produtos
+          </p>
+
+        </div>
+
+        <div class="header-buttons">
+
+          <button class="btn-primary">
+            + Novo produto
+          </button>
+
+          <button class="btn-secondary">
+            <i class="fa-solid fa-download"></i>
+            Exportar
+          </button>
+
+        </div>
+
+      </header>
+
+      <!-- FILTERS -->
+      <section class="filters">
+
+        <div class="search-box">
+
+          <i class="fa-solid fa-magnifying-glass"></i>
+
+          <input
+            type="text"
+            placeholder="Buscar produtos..."
+          />
+
+        </div>
+
+        <select>
+
+          <option>
+            Todas as categorias
+          </option>
+
+          <option>
+            Bebidas
+          </option>
+
+          <option>
+            Pizzas
+          </option>
+
+          <option>
+            Lanches
+          </option>
+
+        </select>
+
+      </section>
+
+      <!-- TABLE -->
+      <section class="table-container">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th>Estoque</th>
+              <th>Mínimo</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr>
+
+              <td>Pizza Calabresa</td>
+              <td>Pizzas</td>
+              <td>20</td>
+              <td>5</td>
+
+              <td>
+                <span class="status success">
+                  Em estoque
+                </span>
+              </td>
+
+              <td class="actions">
+
+                <button class="edit-btn">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+
+                <button class="delete-btn">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+
+              </td>
+
+            </tr>
+
+            <tr>
+
+              <td>Coca-Cola 2L</td>
+              <td>Bebidas</td>
+              <td>3</td>
+              <td>10</td>
+
+              <td>
+                <span class="status warning">
+                  Baixo
+                </span>
+              </td>
+
+              <td class="actions">
+
+                <button class="edit-btn">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+
+                <button class="delete-btn">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+
+              </td>
+
+            </tr>
+
+            <tr>
+
+              <td>Hambúrguer Artesanal</td>
+              <td>Lanches</td>
+              <td>0</td>
+              <td>8</td>
+
+              <td>
+                <span class="status danger">
+                  Sem estoque
+                </span>
+              </td>
+
+              <td class="actions">
+
+                <button class="edit-btn">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+
+                <button class="delete-btn">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+    </main>
+
+  </div>
+
+</body>
+</html>
