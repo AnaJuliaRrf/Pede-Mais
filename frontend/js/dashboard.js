@@ -1,7 +1,10 @@
+const DASHBOARD_REFRESH_INTERVAL = 60000; // atualiza a cada 60 segundos
+
 document.addEventListener("DOMContentLoaded", () => {
   verificarAutenticacao();
   setTodayDate();
   carregarDashboard();
+  setInterval(carregarDashboard, DASHBOARD_REFRESH_INTERVAL);
 });
 
 async function carregarDashboard() {
@@ -40,10 +43,16 @@ function atualizarCards(data) {
   document.getElementById("estoqueBaixo").textContent =
     data.estoqueBaixo;
 
-  document.getElementById("faturamentoHoje").textContent =
-    `R$ ${Number(data.faturamentoHoje)
-      .toFixed(2)
-      .replace(".", ",")}`;
+  const faturamentoText = `R$ ${Number(data.faturamentoHoje)
+    .toFixed(2)
+    .replace(".", ",")}`;
+
+  document.getElementById("faturamentoHoje").textContent = faturamentoText;
+
+  const faturamentoDiarioEl = document.getElementById("faturamentoDiario");
+  if (faturamentoDiarioEl) {
+    faturamentoDiarioEl.textContent = faturamentoText;
+  }
 }
 
 function atualizarTabela(pedidos) {
