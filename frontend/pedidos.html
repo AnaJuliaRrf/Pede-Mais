@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Pedidos</title>
+
+  <link rel="stylesheet" href="./css/pedidos.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+</head>
+
+<body>
+
+  <div class="dashboard-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- LOGO / PERFIL -->
+      <div class="logo">
+        <img src="https://i.pravatar.cc/100" alt="perfil">
+      </div>
+
+      <!-- MENU -->
+      <ul class="menu">
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-grid-fill"></i>
+    </span>
+    <span class="txt-link">Dashboard</span>
+  </li>
+
+  <li class="active">
+    <span class="icon">
+      <i class="bi bi-bag-check"></i>
+    </span>
+    <span class="txt-link">Pedidos</span>
+  </li>
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-box-seam"></i>
+    </span>
+    <span class="txt-link">Estoque</span>
+  </li>
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-cart3"></i>
+    </span>
+    <span class="txt-link">Produtos</span>
+  </li>
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-people"></i>
+    </span>
+    <span class="txt-link">Clientes</span>
+  </li>
+
+</ul>
+
+      <!-- RODAPÉ -->
+     <a href="configuracoes.html" class="settings">
+      <span class="icon">
+        <i class="bi bi-gear"></i>
+      </span>
+       <span class="txt-link">Configurações</span>
+     </a>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+
+        <div>
+          <h1>Pedidos</h1>
+          <span>Visão geral dos seus pedidos</span>
+          </span>
+        </div>
+
+        <div class="topbar-right">
+
+        <div class="topbar-right">
+        <div class="date-box" id="todayDate"></div>
+        </div>
+
+        </div>
+
+      </header>
+  
+ <!--------------------------------------------------------------------------->
+
+
+        <!-- CONTEÚDO PRINCIPAL -->
+
+<div class="container">
+
+    <div class="kanban">
+
+      <!-- PENDENTE -->
+      <div class="coluna" id="pendente">
+
+        <div class="status pendente">
+          Pendente
+          <span class="contador">0</span>
+        </div>
+
+        <div class="card" draggable="true"
+        data-pedido="#000"
+        data-cliente="Marina Santos"
+        data-produto="2x Pizza Calabresa"
+        data-tipo="Entrega"
+        data-pagamento="Dinheiro"
+        data-hora="21/05 - 21:45 às 22:45">
+
+          <div class="pedido">#000</div>
+          <div class="cliente">Marina Santos</div>
+
+          <div class="info">2x Pizza Calabresa</div>
+          <div class="info">Entrega</div>
+          <div class="info">Dinheiro</div>
+
+          <div class="hora">21/05 - 21:45 às 22:45</div>
+
+          <div class="menu-pedidos">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- EM PREPARO -->
+      <div class="coluna" id="preparo">
+
+        <div class="status preparo" >
+          Em preparo
+          <span class="contador">0</span>
+        </div>
+
+        <div class="card" draggable="true"
+        data-pedido="#001"
+        data-cliente="João Pedro"
+        data-produto="1x Pizza Portuguesa"
+        data-tipo="Entrega"
+        data-pagamento="Pix"
+        data-hora="21/05 - 20:10 às 21:00">
+
+          <div class="pedido">#001</div>
+          <div class="cliente">João Pedro</div>
+
+          <div class="info">1x Pizza Portuguesa</div>
+          <div class="info">Entrega</div>
+          <div class="info">Pix</div>
+
+          <div class="hora">21/05 - 20:10 às 21:00</div>
+
+          <div class="menu-pedidos">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SAIU PARA ENTREGA -->
+      <div class="coluna" id="entrega">
+
+        <div class="status entrega">
+          Saiu para entrega
+          <span class="contador">0</span>
+        </div>
+
+        <div class="card" draggable="true"
+        data-pedido="#002"
+        data-cliente="Carlos Lima"
+        data-produto="2x Pizza Bacon"
+        data-tipo="Entrega"
+        data-pagamento="Cartão"
+        data-hora="21/05 - 19:30 às 20:30">
+
+          <div class="pedido">#002</div>
+          <div class="cliente">Carlos Lima</div>
+
+          <div class="info">2x Pizza Bacon</div>
+          <div class="info">Entrega</div>
+          <div class="info">Cartão</div>
+
+          <div class="hora">21/05 - 19:30 às 20:30</div>
+
+          <div class="menu-pedidos">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ENTREGUES -->
+      <div class="coluna" id="entregue">
+
+        <div class="status entregue">
+          Entregues
+          <span class="contador">0</span>
+        </div>
+
+        <div class="card" draggable="true"
+        data-pedido="#003"
+        data-cliente="Fernanda Silva"
+        data-produto="1x Pizza Frango"
+        data-tipo="Entrega"
+        data-pagamento="Pix"
+        data-hora="21/05 - 18:20 às 19:00">
+
+          <div class="pedido">#003</div>
+          <div class="cliente">Fernanda Silva</div>
+
+          <div class="info">1x Pizza Frango</div>
+          <div class="info">Entrega</div>
+          <div class="info">Pix</div>
+
+          <div class="hora">21/05 - 18:20 às 19:00</div>
+
+          <div class="menu-pedidos">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+</div>
+
+</main>
+
+</div>
+   
+<!--------------------------------------------------------------------------->
+
+<!-- PAINEL DETALHES -->
+<div class="overlay" id="overlay"></div>
+<div class="painel-detalhes" id="painelDetalhes">
+
+  <!-- TOPO -->
+  <div class="topo-painel">
+
+    <h3>Detalhes do pedido</h3>
+
+    <button id="fecharPainel">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+  </div>
+
+  <!-- HEADER PEDIDO -->
+  <div class="header-pedido">
+
+    <h2 id="detalhePedido">#000</h2>
+
+    <span class="status-badge" id="statusBadge">
+      <i class="fa-solid fa-circle"></i>
+      Em preparo
+    </span>
+
+  </div>
+
+  <!-- INFORMAÇÕES GERAIS -->
+  <div class="bloco">
+
+    <h4>Informações gerais</h4>
+
+    <div class="info-grid">
+
+      <div class="info-item">
+        <i class="fa-regular fa-user"></i>
+
+        <div>
+          <span>Cliente</span>
+          <strong id="detalheCliente">Marina Santos</strong>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <i class="fa-regular fa-calendar"></i>
+
+        <div>
+          <span>Data</span>
+          <strong>21/05/2026</strong>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <i class="fa-solid fa-store"></i>
+
+        <div>
+          <span>Tipo</span>
+          <strong id="detalheTipo">Entrega</strong>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <i class="fa-regular fa-clock"></i>
+
+        <div>
+          <span>Horário</span>
+          <strong id="detalheHora">21:45 às 22:45</strong>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <i class="fa-regular fa-credit-card"></i>
+
+        <div>
+          <span>Pagamento</span>
+          <strong id="detalhePagamento">Dinheiro</strong>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ITENS -->
+  <div class="bloco">
+
+    <h4>Itens do pedido</h4>
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtd</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr>
+          <td id="detalheProduto">Pizza Calabresa</td>
+          <td>2x</td>
+          <td>R$ 70,00</td>
+        </tr>
+
+        <tr>
+          <td>Refrigerante 2L</td>
+          <td>1x</td>
+          <td>R$ 12,00</td>
+        </tr>
+
+        <tr>
+          <td>Borda recheada</td>
+          <td>1x</td>
+          <td>R$ 8,00</td>
+        </tr>
+
+      </tbody>
+
+    </table>
+
+    <div class="subtotal">
+      <span>Subtotal:</span>
+      <strong>R$ 90,00</strong>
+    </div>
+
+  </div>
+
+  <!-- ENTREGA -->
+  <div class="bloco">
+
+    <h4>Dados da entrega</h4>
+
+    <div class="entrega-grid">
+
+      <div>
+        <span>Endereço</span>
+        <strong>Rua Exemplo, 123</strong>
+      </div>
+
+      <div>
+        <span>Bairro</span>
+        <strong>Centro</strong>
+      </div>
+
+      <div>
+        <span>Cidade</span>
+        <strong>São Paulo - SP</strong>
+      </div>
+
+      <div>
+        <span>CEP</span>
+        <strong>00000-000</strong>
+      </div>
+
+      <div>
+        <span>Referência</span>
+        <strong>Casa azul</strong>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- RESPONSÁVEL -->
+  <div class="bloco">
+
+    <h4>Responsável pela entrega</h4>
+
+    <div class="responsavel-grid">
+
+      <div>
+        <span>Entregador</span>
+        <strong>João</strong>
+      </div>
+
+      <div>
+        <span>Tempo estimado</span>
+        <strong>20 min</strong>
+      </div>
+
+      <div>
+        <span>Observações</span>
+        <strong>Sem cebola</strong>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="historico">
+
+  <div class="historico-item" id="histRecebido">
+
+    <span class="bolinha"></span>
+
+    <div>
+      <strong>Pedido recebido</strong>
+    </div>
+
+
+  </div>
+
+  <div class="historico-item" id="histPreparo">
+
+    <span class="bolinha"></span>
+
+    <div>
+      <strong>Em preparo</strong>
+    </div>
+
+
+  </div>
+
+  <div class="historico-item" id="histEntrega">
+
+    <span class="bolinha"></span>
+
+    <div>
+      <strong>Saiu para entrega</strong>
+    </div>
+
+
+  </div>
+
+  <div class="historico-item" id="histEntregue">
+
+    <span class="bolinha"></span>
+
+    <div>
+      <strong>Entregue</strong>
+    </div>
+
+
+  </div>
+
+</div>
+
+  <!-- AÇÕES -->
+  <div class="acoes">
+
+    <button class="btn azul">
+      <i class="fa-solid fa-arrows-rotate"></i>
+      Atualizar status
+    </button>
+
+    <button class="btn cinza">
+      <i class="fa-solid fa-pen"></i>
+      Editar pedido
+    </button>
+
+    <button class="btn vermelho">
+      <i class="fa-solid fa-trash"></i>
+      Cancelar pedido
+    </button>
+
+    <button class="btn branco">
+      <i class="fa-solid fa-print"></i>
+      Imprimir recibo
+    </button>
+
+    <button class="btn verde">
+      <i class="fa-solid fa-check"></i>
+      Finalizar entrega
+    </button>
+
+  </div>
+
+</div>
+
+<!------------------------------------------------------------------------------------------------>>
+
+<!-- FOOTER -->
+<footer class="footer">
+
+  <div class="footer-container">
+
+    <!-- REDES -->
+    <div class="footer-col">
+
+      <h4>Nos siga nas redes sociais</h4>
+
+      <div class="redes">
+
+        <a href="#">
+          <i class="fa-brands fa-whatsapp"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-instagram"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-facebook-f"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-twitter"></i>
+        </a>
+
+      </div>
+
+    </div>
+
+    <!-- SOBRE -->
+    <div class="footer-col">
+
+      <h4>Sobre nós</h4>
+
+      <a href="#">Informações da empresa</a>
+
+      <a href="#">Contato</a>
+
+      <a href="#">Blog</a>
+
+    </div>
+
+    <!-- SUPORTE -->
+    <div class="footer-col">
+
+      <h4>Suporte</h4>
+
+      <a href="#">Telefone</a>
+
+      <a href="#">Chat</a>
+
+      <a href="#">FAQ</a>
+
+    </div>
+
+    <!-- TEXTO -->
+    <div class="footer-col texto-footer">
+
+      <h4>Pedidos Mais</h4>
+
+      <p>
+        Gerencie pedidos, estoque e atendimento
+        do seu negócio em um só lugar.
+      </p>
+
+    </div>
+
+  </div>
+
+</footer>
+
+<!---------------------------------------------------------------------------->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/kanban.js"></script>
+  <script src="js/painel-pedidos.js"></script>
+  <script>setTodayDate();</script>
+
+  
+
+</body>
+</html>

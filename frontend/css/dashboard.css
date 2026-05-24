@@ -10,17 +10,26 @@ html,
 body {
   width: 100%;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   font-family: 'Poppins', sans-serif;
   background: #f4f6fb;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+}
+
+::-webkit-scrollbar{
+  width: 0;
+  height: 0;
 }
 
 /* LAYOUT */
 .dashboard-container {
   display: flex;
-  min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
 }
@@ -140,7 +149,9 @@ body {
   margin-left: 70px;
   width: calc(100% - 70px);
   max-width: calc(100% - 70px);
-  min-height: 100vh;
+
+  min-height: auto;
+
   padding: 32px;
   transition: 0.3s;
   overflow-x: hidden;
@@ -428,4 +439,139 @@ tbody tr {
     display: block;
     overflow-x: auto;
   }
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+
+.footer{
+  margin-left: 70px;
+
+  width: calc(100% - 70px);
+
+  background: linear-gradient(
+    90deg,
+    #001f8d,
+    #2f8fff
+  );
+
+  padding: 60px 50px 35px;
+
+  color: white;
+}
+
+.footer-container{
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-start;
+
+  gap: 40px;
+
+  flex-wrap: wrap;
+}
+
+.footer-col{
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
+
+  min-width: 150px;
+}
+
+.footer-col h4{
+
+  font-size: 13px;
+
+  margin-bottom: 8px;
+
+  font-weight: 600;
+}
+
+.footer-col a{
+
+  color: rgba(255,255,255,.85);
+
+  text-decoration: none;
+
+  font-size: 12px;
+
+  transition: .2s;
+}
+
+.footer-col a:hover{
+  color: white;
+}
+
+.redes{
+
+  display: flex;
+
+  gap: 10px;
+}
+
+.redes a{
+
+  width: 30px;
+  height: 30px;
+
+  border-radius: 50%;
+
+  background: rgba(255,255,255,.12);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+}
+
+.texto-footer{
+
+  max-width: 250px;
+}
+
+.texto-footer p{
+
+  font-size: 12px;
+
+  line-height: 1.6;
+
+  color: rgba(255,255,255,.85);
+}
+
+.footer-logo img{
+
+  width: 120px;
+
+  border-radius: 8px;
+
+  background: white;
+}
+
+/* RESPONSIVO */
+
+@media(max-width: 900px){
+
+  .footer-container{
+
+    flex-direction: column;
+
+    gap: 30px;
+  }
+
+   .footer{
+    margin-left: 0;
+    width: 100%;
+    padding: 40px 25px;
+  }
+
 }

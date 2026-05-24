@@ -89,3 +89,20 @@ function setTodayDate() {
 
   el.textContent = `Hoje, ${day} de ${month} de ${year}`;
 }
+
+function setTodayDate() {
+
+  const data = new Date();
+
+  const opcoes = {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  };
+
+  const dataFormatada = data.toLocaleDateString('pt-BR', opcoes);
+
+  document.getElementById('todayDate').innerHTML =
+    `Hoje, ${dataFormatada}`;
+
+}
