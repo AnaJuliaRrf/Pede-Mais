@@ -12,6 +12,7 @@ body {
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  scrollbar-width: none;
 }
 
 body {
@@ -27,6 +28,7 @@ body {
   width: 100%;
   overflow-x: hidden;
 }
+
 
 /* =========================
    SIDEBAR
@@ -139,14 +141,12 @@ body {
    MAIN CONTENT
 ========================= */
 .main-content {
-  flex: 1;
   margin-left: 70px;
+  min-height: 100vh;
   width: calc(100% - 70px);
-  max-width: calc(100% - 70px);
-  min-height: auto;
   padding: 32px;
-  transition: 0.3s;
-  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar:hover ~ .main-content {
@@ -188,175 +188,59 @@ body {
   font-size: 13px;
 }
 
-/* =========================
-   PAINEL LATERAL
-========================= */
-
-.painel-detalhes{
-  position: fixed;
-  top: 0;
-  right: -460px;
-
-  width: 460px;
-  height: 100vh;
-
-  background: #f8f8f8;
-
-  transition: .3s ease;
-
-  z-index: 9999;
-
-  overflow-y: auto;
-
-  border-left: 1px solid #dcdcdc;
-
-  padding: 18px;
-  z-index: 6000;
-}
-
-.painel-detalhes.ativo{
-  right: 0;
-}
-
-.topo-painel{
+.profile {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-
-  margin-bottom: 22px;
+  gap: 10px;
 }
 
-.topo-painel h3{
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.topo-painel button{
-  border: none;
-  background: transparent;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-/* OVERLAY ESCURO */
-
-.overlay{
-  position: fixed;
-
-  top: 0;
-  left: 0;
-
-  width: 100%;
-  height: 100vh;
-
-  background: rgba(0,0,0,0.35);
-
-  backdrop-filter: blur(2px);
-
-  opacity: 0;
-  visibility: hidden;
-
-  transition: .3s ease;
-
-  z-index: 3000;
-}
-
-.overlay.ativo{
-  opacity: 1;
-  visibility: visible;
-}
-
-/* OCULTAR SCROLLBAR */
-
-::-webkit-scrollbar{
-  width: 0;
-  height: 0;
-}
-
-body{
-  scrollbar-width: none;
-}
-
-/* ocutar barra da aba lateral*/
-
-.painel-detalhes::-webkit-scrollbar{
-  width: 0;
-}
-
-.painel-detalhes{
-  scrollbar-width: none;
+.profile img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
 }
 
 /* =========================
    FOOTER
 ========================= */
 
-.sidebar:hover ~ .footer{
-  margin-left: 230px;
-
-  width: calc(100% - 230px);
-}
-
 .footer{
-
   margin-left: 70px;
-  margin-bottom: 0;
   width: calc(100% - 70px);
-
   background: linear-gradient(
     90deg,
     #001f8d,
     #2f8fff
   );
-
-  padding: 35px 50px;
-
-  margin-top: 60px;
-
+  padding: 60px 50px 35px;
   color: white;
 }
 
 .footer-container{
-
-  display: flex;
-
   justify-content: space-between;
-
   align-items: flex-start;
-
   gap: 40px;
-
+  display: flex;
   flex-wrap: wrap;
 }
 
 .footer-col{
-
   display: flex;
-
   flex-direction: column;
-
   gap: 10px;
-
   min-width: 150px;
 }
 
 .footer-col h4{
-
   font-size: 13px;
-
   margin-bottom: 8px;
-
   font-weight: 600;
 }
 
 .footer-col a{
-
   color: rgba(255,255,255,.85);
-
   text-decoration: none;
-
   font-size: 12px;
-
   transition: .2s;
 }
 
@@ -365,51 +249,42 @@ body{
 }
 
 .redes{
-
   display: flex;
-
   gap: 10px;
 }
 
 .redes a{
-
   width: 30px;
   height: 30px;
-
   border-radius: 50%;
-
   background: rgba(255,255,255,.12);
-
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   font-size: 14px;
 }
 
 .texto-footer{
-
   max-width: 250px;
 }
 
 .texto-footer p{
-
   font-size: 12px;
-
   line-height: 1.6;
-
   color: rgba(255,255,255,.85);
+}
+
+.footer-logo img{
+  width: 120px;
+  border-radius: 8px;
+  background: white;
 }
 
 /* RESPONSIVO */
 
 @media(max-width: 900px){
-
   .footer-container{
-
     flex-direction: column;
-
     gap: 30px;
   }
 
