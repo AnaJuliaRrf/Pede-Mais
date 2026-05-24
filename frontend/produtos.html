@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Produtos</title>
+
+  <link rel="stylesheet" href="./css/pedidos.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+</head>
+
+<body>
+
+  <div class="dashboard-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- LOGO / PERFIL -->
+      <div class="logo">
+        <img src="https://i.pravatar.cc/100" alt="perfil">
+      </div>
+
+      <!-- MENU -->
+      <ul class="menu">
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-grid-fill"></i>
+    </span>
+    <span class="txt-link">Dashboard</span>
+  </li>
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-bag-check"></i>
+    </span>
+    <span class="txt-link">Pedidos</span>
+  </li>
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-box-seam"></i>
+    </span>
+    <span class="txt-link">Estoque</span>
+  </li>
+
+  <li class="active">
+    <span class="icon">
+      <i class="bi bi-cart3"></i>
+    </span>
+    <span class="txt-link">Produtos</span>
+  </li>
+
+  <li>
+    <span class="icon">
+      <i class="bi bi-people"></i>
+    </span>
+    <span class="txt-link">Clientes</span>
+  </li>
+
+</ul>
+
+      <!-- RODAPÉ -->
+     <a href="configuracoes.html" class="settings">
+      <span class="icon">
+        <i class="bi bi-gear"></i>
+      </span>
+       <span class="txt-link">Configurações</span>
+     </a>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+
+        <div>
+          <h1>Produtos</h1>
+          <span>Visão geral dos seus produtos</span>
+          </span>
+        </div>
+
+        <div class="topbar-right">
+
+        <div class="topbar-right">
+        <div class="date-box" id="todayDate"></div>
+        </div>
+
+        </div>
+
+      </header>
+  
+ <!--------------------------------------------------------------------------->
+
+
+        <!-- CONTEÚDO PRINCIPAL -->
+
+
+</main>
+
+</div>
+   
+<!--------------------------------------------------------------------------->
+
+<!-- PAINEL DETALHES -->
+<div class="overlay" id="overlay"></div>
+<div class="painel-detalhes" id="painelDetalhes">
+
+  <!-- TOPO -->
+  <div class="topo-painel">
+
+    <h3>Detalhes dos produtos</h3>
+
+    <button id="fecharPainel">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+  </div>
+
+  
+
+  </div>
+
+<!------------------------------------------------------------------------------------------------>>
+
+<!-- FOOTER -->
+<footer class="footer">
+
+  <div class="footer-container">
+
+    <!-- REDES -->
+    <div class="footer-col">
+
+      <h4>Nos siga nas redes sociais</h4>
+
+      <div class="redes">
+
+        <a href="#">
+          <i class="fa-brands fa-whatsapp"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-instagram"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-facebook-f"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-twitter"></i>
+        </a>
+
+      </div>
+
+    </div>
+
+    <!-- SOBRE -->
+    <div class="footer-col">
+
+      <h4>Sobre nós</h4>
+
+      <a href="#">Informações da empresa</a>
+
+      <a href="#">Contato</a>
+
+      <a href="#">Blog</a>
+
+    </div>
+
+    <!-- SUPORTE -->
+    <div class="footer-col">
+
+      <h4>Suporte</h4>
+
+      <a href="#">Telefone</a>
+
+      <a href="#">Chat</a>
+
+      <a href="#">FAQ</a>
+
+    </div>
+
+    <!-- TEXTO -->
+    <div class="footer-col texto-footer">
+
+      <h4>Pedidos Mais</h4>
+
+      <p>
+        Gerencie pedidos, estoque e atendimento
+        do seu negócio em um só lugar.
+      </p>
+
+    </div>
+
+  </div>
+
+</footer>
+
+<!---------------------------------------------------------------------------->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/kanban.js"></script>
+  <script src="js/painel-pedidos.js"></script>
+  <script>setTodayDate();</script>
+
+  
+
+</body>
+</html>
