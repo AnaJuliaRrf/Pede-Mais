@@ -12,11 +12,11 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
 
-  <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Icons -->
   <link
@@ -101,7 +101,6 @@
         <div class="date-box" id="todayDate"></div>
         </div>
 
-        </div>
 
       </header>
   
@@ -109,7 +108,214 @@
 
 
         <!-- CONTEÚDO PRINCIPAL -->
-   
+        <div class="container">
+
+  <!-- TOPO -->
+  <div class="top-actions">
+
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="🔍 Buscar produtos..."
+    >
+
+    <select id="categoryFilter">
+
+      <option value="all">Todas as categorias</option>
+      <option value="Pizza">Pizza</option>
+      <option value="Lanche">Lanche</option>
+      <option value="Bebida">Bebida</option>
+
+    </select>
+
+    <button class="new-product">
+      <i class="fa-solid fa-plus"></i>
+      Novo produto
+    </button>
+
+  </div>
+
+  <!-- GRID -->
+  <div class="products-grid">
+
+    <!-- CARD -->
+    <div class="product-card">
+
+      <div class="product-image"></div>
+
+      <div class="product-info">
+
+        <h3>Pizza Calabresa</h3>
+
+        <div class="category">Pizzas</div>
+
+        <div class="price">R$ 35,00</div>
+
+        <div class="status">Disponível</div>
+
+        <div class="card-footer">
+
+          <button class="edit-btn">
+            <i class="fa-solid fa-pen"></i>
+            Editar
+          </button>
+
+          <div class="right-actions">
+
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+
+            <i class="fa-regular fa-trash-can delete-btn"></i>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!------------------------------------------------------------------------------------------------>
+
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay"></div>
+
+<!-- SIDEBAR -->
+<div class="product-sidebar" id="productSidebar">
+
+  <div class="sidebar-header">
+
+    <div>
+      <h2>Novo produto</h2>
+      <p>Preencha as informações para cadastrar um novo produto no seu cardápio.</p>
+    </div>
+
+    <button class="close-sidebar" id="closeSidebar">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+  </div>
+
+  <div class="sidebar-content">
+
+    <!-- ESQUERDA -->
+    <div class="form-side">
+
+      <div class="input-group">
+        <label>Nome do produto *</label>
+        <input type="text" placeholder="Ex.: Pizza Calabresa">
+      </div>
+
+      <div class="two-columns">
+
+        <div class="input-group">
+          <label>Categoria *</label>
+
+          <select>
+            <option>Selecione uma categoria</option>
+            <option>Pizza</option>
+            <option>Lanche</option>
+            <option>Bebida</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Preço (R$)</label>
+          <input type="text" placeholder="Ex.: 35,00">
+        </div>
+
+      </div>
+
+      <div class="two-columns">
+
+        <div class="input-group">
+          <label>Custo (R$)</label>
+          <input type="text" placeholder="Ex.: 18,00">
+        </div>
+
+        <div class="input-group">
+          <label>Unidade</label>
+          <input type="text" placeholder="Ex.: un, kg, ml">
+        </div>
+
+      </div>
+
+      <div class="input-group">
+        <label>Descrição</label>
+
+        <textarea placeholder="Descreva o produto, ingredientes, detalhes, etc."></textarea>
+      </div>
+
+      <div class="switches">
+
+        <div class="switch-box">
+
+          <span>Status</span>
+
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+
+        </div>
+
+        <div class="switch-box">
+
+          <span>Destaque</span>
+
+          <label class="switch">
+            <input type="checkbox">
+            <span class="slider"></span>
+          </label>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- DIREITA -->
+    <div class="upload-side">
+
+      <div class="upload-box">
+
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+
+        <h4>Clique ou arraste uma imagem</h4>
+
+        <p>PNG, JPG • máximo 2MB</p>
+
+      </div>
+
+      <div class="sidebar-buttons">
+
+        <button class="cancel-btn">
+          Cancelar
+        </button>
+
+        <button class="save-btn">
+          <i class="fa-regular fa-floppy-disk"></i>
+          Salvar produto
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+</main>
+</div>
 
 <!------------------------------------------------------------------------------------------------>
 
@@ -186,7 +392,7 @@
   </div>
 
 </footer>
-</main>
+
 <!---------------------------------------------------------------------------->
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>

@@ -1,39 +1,186 @@
-const productsGrid = document.getElementById("productsGrid");
+// =========================
+// ELEMENTOS
+// =========================
 
-const products = [
-  {
-    nome: "Pizza Calabresa",
-    categoria: "Pizzas",
-    preco: "35,00",
-    quantidade: 12
-  },
-  {
-    nome: "X-Burger",
-    categoria: "Lanches",
-    preco: "22,00",
-    quantidade: 4
-  },
-  {
-    nome: "Refrigerante 2L",
-    categoria: "Bebidas",
-    preco: "9,00",
-    quantidade: 0
-  }
-];
+const newProductBtn = document.querySelector(".new-product")
 
-function renderProducts() {
-  productsGrid.innerHTML = "";
+const sidebar = document.getElementById("productSidebar")
 
-  products.forEach(produto => {
-    productsGrid.innerHTML += `
-      <div class="product-card">
-        <h3>${produto.nome}</h3>
-        <p>Categoria: ${produto.categoria}</p>
-        <p>Preço: R$ ${produto.preco}</p>
-        <p>Estoque: ${produto.quantidade}</p>
-      </div>
-    `;
-  });
+const overlay = document.getElementById("overlay")
+
+const closeSidebarBtn = document.getElementById("closeSidebar")
+
+const cancelBtn = document.querySelector(".cancel-btn")
+
+const searchInput = document.getElementById("searchInput")
+
+const categoryFilter = document.getElementById("categoryFilter")
+
+const productsGrid = document.querySelector(".products-grid")
+
+
+// =========================
+// ABRIR SIDEBAR
+// =========================
+
+newProductBtn.addEventListener("click", () => {
+
+  sidebar.classList.add("active")
+
+  overlay.classList.add("active")
+
+})
+
+
+// =========================
+// FECHAR SIDEBAR
+// =========================
+
+function closeSidebar(){
+
+  sidebar.classList.remove("active")
+
+  overlay.classList.remove("active")
+
 }
 
-renderProducts();
+
+// BOTÃO X
+closeSidebarBtn.addEventListener("click", closeSidebar)
+
+
+// BOTÃO CANCELAR
+cancelBtn.addEventListener("click", closeSidebar)
+
+
+// CLICAR NO FUNDO ESCURO
+overlay.addEventListener("click", closeSidebar)
+
+
+// =========================
+// FECHAR COM ESC
+// =========================
+
+document.addEventListener("keydown", (event) => {
+
+  if(event.key === "Escape"){
+
+    closeSidebar()
+
+  }
+
+})
+
+
+// =========================
+// BUSCAR PRODUTOS
+// =========================
+
+searchInput.addEventListener("input", filterProducts)
+
+categoryFilter.addEventListener("change", filterProducts)
+
+
+function filterProducts(){
+
+  const searchText = searchInput.value.toLowerCase()
+
+  const selectedCategory = categoryFilter.value.toLowerCase()
+
+  const cards = document.querySelectorAll(".product-card")
+
+  cards.forEach(card => {
+
+    const title = card.querySelector("h3").textContent.toLowerCase()
+
+    const category = card.querySelector(".category").textContent.toLowerCase()
+
+    const matchesSearch = title.includes(searchText)
+
+    const matchesCategory =
+      selectedCategory === "all" ||
+      category.includes(selectedCategory)
+
+    if(matchesSearch && matchesCategory){
+
+      card.style.display = "flex"
+
+    }else{
+
+      card.style.display = "none"
+
+    }
+
+  })
+
+}
+
+
+// =========================
+// SWITCH STATUS
+// =========================
+
+const switches = document.querySelectorAll(".switch input")
+
+switches.forEach(item => {
+
+  item.addEventListener("change", () => {
+
+    console.log("Status alterado")
+
+  })
+
+})
+
+
+// =========================
+// BOTÃO DELETE
+// =========================
+
+const deleteButtons = document.querySelectorAll(".delete-btn")
+
+deleteButtons.forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    const card = button.closest(".product-card")
+
+    card.remove()
+
+  })
+
+})
+
+
+// =========================
+// BOTÃO EDITAR
+// =========================
+
+const editButtons = document.querySelectorAll(".edit-btn")
+
+editButtons.forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    sidebar.classList.add("active")
+
+    overlay.classList.add("active")
+
+  })
+
+})
+
+
+// =========================
+// SIMULAÇÃO SALVAR PRODUTO
+// =========================
+
+const saveBtn = document.querySelector(".save-btn")
+
+saveBtn.addEventListener("click", () => {
+
+  alert("Produto salvo com sucesso!")
+
+  closeSidebar()
+
+})
