@@ -9,6 +9,8 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="./css/estoque.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
 
   <!-- Fonte -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,56 +36,74 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
 
-      <div class="sidebar-logo">
-        <i class="fa-solid fa-bars"></i>
+      <!-- LOGO / PERFIL -->
+      <div class="logo">
+        <img src="https://i.pravatar.cc/100" alt="perfil">
       </div>
 
-      <nav class="sidebar-menu">
+      <!-- MENU -->
+      <ul class="menu">
 
-        <a href="dashboard.html" class="menu-item">
-          <i class="fa-solid fa-house"></i>
-          <span>Dashboard</span>
-        </a>
+  <li>
+    <span class="icon">
+      <i class="bi bi-grid-fill"></i>
+    </span>
+    <span class="txt-link">Dashboard</span>
+  </li>
 
-        <a href="pedidos.html" class="menu-item">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span>Pedidos</span>
-        </a>
+  <li>
+    <span class="icon">
+      <i class="bi bi-bag-check"></i>
+    </span>
+    <span class="txt-link">Pedidos</span>
+  </li>
 
-        <a href="estoque.html" class="menu-item active">
-          <i class="fa-solid fa-box"></i>
-          <span>Estoque</span>
-        </a>
+  <li class="active">
+    <span class="icon">
+      <i class="bi bi-box-seam"></i>
+    </span>
+    <span class="txt-link">Estoque</span>
+  </li>
 
-        <a href="produtos.html" class="menu-item">
-          <i class="fa-solid fa-pizza-slice"></i>
-          <span>Produtos</span>
-        </a>
+  <li>
+    <span class="icon">
+      <i class="bi bi-cart3"></i>
+    </span>
+    <span class="txt-link">Produtos</span>
+  </li>
 
-        <a href="clientes.html" class="menu-item">
-          <i class="fa-solid fa-users"></i>
-          <span>Clientes</span>
-        </a>
+  <li>
+    <span class="icon">
+      <i class="bi bi-people"></i>
+    </span>
+    <span class="txt-link">Clientes</span>
+  </li>
 
-      </nav>
+</ul>
 
+      <!-- RODAPÉ -->
+     <a href="configuracoes.html" class="settings">
+      <span class="icon">
+        <i class="bi bi-gear"></i>
+      </span>
+       <span class="txt-link">Configurações</span>
+     </a>
     </aside>
 
-    <!-- MAIN -->
+     <!-- MAIN -->
     <main class="main-content">
 
-      <!-- HEADER -->
-      <header class="page-header">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
 
         <div>
-
           <h1>Estoque</h1>
-
-          <p>
-            Controle o estoque de seus produtos
-          </p>
-
+          <span>Controle o estoque de seus produtos</span>
+          </span>
         </div>
+
+       
 
         <div class="header-buttons">
 
@@ -99,6 +119,11 @@
         </div>
 
       </header>
+
+<!--------------------------------------------------------------------------->
+
+
+      <!-- CONTEÚDO PRINCIPAL -->
 
       <!-- FILTERS -->
       <section class="filters">
@@ -160,10 +185,86 @@
         </table>
 
       </section>
-
-    </main>
+       </main>
 
   </div>
+
+<!------------------------------------------------------------------------------------------------>
+
+<!-- FOOTER -->
+<footer class="footer">
+
+  <div class="footer-container">
+
+    <!-- REDES -->
+    <div class="footer-col">
+
+      <h4>Nos siga nas redes sociais</h4>
+
+      <div class="redes">
+
+        <a href="#">
+          <i class="fa-brands fa-whatsapp"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-instagram"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-facebook-f"></i>
+        </a>
+
+        <a href="#">
+          <i class="fa-brands fa-twitter"></i>
+        </a>
+
+      </div>
+
+    </div>
+
+    <!-- SOBRE -->
+    <div class="footer-col">
+
+      <h4>Sobre nós</h4>
+
+      <a href="#">Informações da empresa</a>
+
+      <a href="#">Contato</a>
+
+      <a href="#">Blog</a>
+
+    </div>
+
+    <!-- SUPORTE -->
+    <div class="footer-col">
+
+      <h4>Suporte</h4>
+
+      <a href="#">Telefone</a>
+
+      <a href="#">Chat</a>
+
+      <a href="#">FAQ</a>
+
+    </div>
+
+    <!-- TEXTO -->
+    <div class="footer-col texto-footer">
+
+      <h4>Pedidos Mais</h4>
+
+      <p>
+        Gerencie pedidos, estoque e atendimento
+        do seu negócio em um só lugar.
+      </p>
+
+    </div>
+
+  </div>
+
+</footer>
+
 
   <script src="./js/api.js"></script>
   <script src="./js/estoque.js"></script>
