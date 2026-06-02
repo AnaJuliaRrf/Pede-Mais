@@ -79,21 +79,26 @@ body {
 
 /* ITEM */
 .menu li {
+  list-style: none;
+  margin-bottom: 10px;
+}
+
+.menu li a {
   display: flex;
   align-items: center;
   gap: 18px;
   padding: 14px 12px;
-  margin-bottom: 10px;
   border-radius: 14px;
-  cursor: pointer;
+  text-decoration: none;
+  color: white;
   transition: 0.3s;
 }
 
-.menu li:hover {
+.menu li a:hover {
   background: rgba(255, 255, 255, 0.15);
 }
 
-.menu li.active {
+.menu li.active a {
   background: orange;
 }
 
