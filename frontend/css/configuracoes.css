@@ -1,0 +1,683 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.settings.active{
+    background: orange;
+}
+
+/* BODY */
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  scrollbar-width: none;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f4f6fb;
+  overflow-x: hidden;
+}
+
+/* LAYOUT */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+
+/* =========================
+   SIDEBAR
+========================= */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 70px;
+  height: 100vh;
+  background: linear-gradient(180deg, #2f8fff, #001f8d);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px 10px;
+  overflow: hidden;
+  transition: 0.3s;
+  z-index: 1000;
+}
+
+.sidebar:hover {
+  width: 230px;
+}
+
+/* PERFIL */
+.logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.logo img {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+}
+
+/* MENU */
+.menu {
+  list-style: none;
+  margin-top: 100px;
+  margin-bottom: auto;
+}
+
+/* ITEM */
+.menu li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 12px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.menu li:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.menu li.active {
+  background: orange;
+}
+
+/* ÍCONES */
+.icon {
+  min-width: 22px;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.icon i {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* TEXTO */
+.txt-link {
+  color: white;
+  white-space: nowrap;
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.sidebar:hover .txt-link {
+  opacity: 1;
+}
+
+/* CONFIGURAÇÕES */
+.settings {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 12px;
+  text-decoration: none;
+  color: white;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.settings:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* =========================
+   MAIN CONTENT
+========================= */
+.main-content {
+  margin-left: 70px;
+  min-height: 100vh;
+  width: calc(100% - 70px);
+  padding: 32px;
+}
+
+.sidebar:hover ~ .main-content {
+  margin-left: 230px;
+  width: calc(100% - 230px);
+  max-width: calc(100% - 230px);
+}
+
+/* =========================
+   TOPBAR
+========================= */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.topbar h1 {
+  font-size: 28px;
+  color: #222;
+}
+
+.topbar span {
+  color: #777;
+  font-size: 14px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.date-box {
+  background: white;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+.footer{
+  margin-left: 70px;
+  width: calc(100% - 70px);
+  background: linear-gradient(
+    90deg,
+    #001f8d,
+    #2f8fff
+  );
+  padding: 60px 50px 35px;
+  color: white;
+}
+
+.footer-container{
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.footer-col{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 150px;
+}
+
+.footer-col h4{
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.footer-col a{
+  color: rgba(255,255,255,.85);
+  text-decoration: none;
+  font-size: 12px;
+  transition: .2s;
+  font-family: 'Poppins', sans-serif;
+}
+
+.footer-col a:hover{
+  color: white;
+}
+
+.redes{
+  display: flex;
+  gap: 10px;
+}
+
+.redes a{
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.texto-footer{
+  max-width: 250px;
+}
+
+.texto-footer p{
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255,255,255,.85);
+}
+
+.footer-logo img{
+  width: 120px;
+  border-radius: 8px;
+  background: white;
+}
+
+/* RESPONSIVO */
+
+@media(max-width: 900px){
+  .footer-container{
+    flex-direction: column;
+    gap: 30px;
+  }
+
+}
+
+/* CONTAINER */
+.container{
+  width: 100%;
+  padding: 12px;
+}
+
+
+/*conteudo-----------------------------------------------------------------------------------------------*/
+
+/* =========================
+   CONFIGURAÇÕES
+========================= */
+
+.settings-grid{
+    display:grid;
+    grid-template-columns: 2fr 1fr;
+    gap:20px;
+}
+
+/* POSIÇÕES DOS CARDS */
+
+.company-card{ grid-column:1; }
+.logo-card{ grid-column:2; }
+
+.profile-card{
+    grid-column:1;
+    display:flex;
+    flex-direction:column;
+}
+
+.delivery-card{ grid-column:2; }
+
+.hours-card{ grid-column:1; }
+
+.security-card{ grid-column:2; }
+
+.payment-card{ grid-column:1; }
+
+/* CARDS */
+
+.card{
+    background:#fff;
+    border-radius:18px;
+    padding:24px;
+    border:1px solid #e8e8e8;
+
+    box-shadow:
+    0 2px 6px rgba(0,0,0,.04),
+    0 10px 25px rgba(0,0,0,.04);
+
+    transition:.25s;
+}
+
+.card:hover{
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 12px 25px rgba(0,0,0,.08);
+}
+
+.card h3{
+    font-size:16px;
+    margin-bottom:20px;
+}
+
+/* FORMULÁRIO */
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:15px;
+}
+
+.field{
+    display:flex;
+    flex-direction:column;
+}
+
+.field label{
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+}
+
+.field input,
+.field select,
+.field textarea{
+    height:44px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:0 14px;
+    transition:.2s;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus{
+    border-color:#2563eb;
+    box-shadow:0 0 0 4px rgba(37,99,235,.12);
+    outline:none;
+}
+
+/* UPLOAD */
+
+.upload-box{
+    height:180px;
+
+    border:2px dashed #d1d5db;
+    border-radius:12px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+
+    gap:8px;
+
+    margin-bottom:15px;
+
+    cursor:pointer;
+
+    color:#64748b;
+}
+
+/* BOTÕES */
+
+.btn-primary,
+.btn-secondary,
+.btn-danger{
+    width:100%;
+    height:44px;
+
+    border-radius:10px;
+
+    font-family:'Poppins',sans-serif;
+    font-size:14px;
+    font-weight:600;
+
+    cursor:pointer;
+    transition:.2s;
+}
+
+/* SALVAR */
+
+.btn-primary{
+    background:#2563eb;
+    color:#fff;
+    border:none;
+    margin-top:20px;
+}
+
+.btn-primary:hover{
+    background:#1d4ed8;
+}
+
+/* SECUNDÁRIO */
+
+.btn-secondary{
+    background:#f8fafc;
+    color:#334155;
+
+    border:1px solid #dbe2ea;
+
+    margin-top:16px;
+}
+
+.btn-secondary:hover{
+    background:#eef2f7;
+}
+
+/* SAIR */
+
+.btn-danger{
+    background:#fff5f5;
+    color:#e11d48;
+    border:1px solid #fecaca;
+}
+
+.btn-danger:hover{
+    background:#fee2e2;
+}
+
+/* PERFIL */
+
+.profile-card .field{
+    margin-bottom:14px;
+}
+
+/* ENTREGA */
+
+.switch-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+}
+
+/* SWITCH */
+
+.switch{
+    position:relative;
+    display:inline-block;
+
+    width:48px;
+    height:24px;
+}
+
+.switch input{
+    opacity:0;
+    width:0;
+    height:0;
+}
+
+.slider{
+    position:absolute;
+    inset:0;
+
+    background:#d1d5db;
+
+    border-radius:50px;
+
+    transition:.3s;
+}
+
+.slider:before{
+    content:"";
+
+    position:absolute;
+
+    width:18px;
+    height:18px;
+
+    left:3px;
+    top:3px;
+
+    background:#fff;
+
+    border-radius:50%;
+
+    transition:.3s;
+}
+
+.switch input:checked + .slider{
+    background:#22c55e;
+}
+
+.switch input:checked + .slider:before{
+    transform:translateX(24px);
+}
+
+/* HORÁRIOS */
+
+.card-title{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+    margin-bottom:20px;
+}
+
+.card-title i{
+    width:42px;
+    height:42px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:10px;
+    color:#fff;
+}
+
+.purple i{
+    background:#a855f7;
+}
+
+.card-title h3{
+    margin:0;
+}
+
+.card-title p{
+    margin-top:4px;
+    color:#777;
+    font-size:13px;
+}
+
+.hour-row{
+    display:grid;
+
+    grid-template-columns:
+    160px
+    60px
+    120px
+    120px;
+
+    gap:12px;
+
+    align-items:center;
+
+    padding:10px 0;
+
+    border-bottom:1px solid #f1f1f1;
+}
+
+.hour-row span{
+    font-weight:600;
+}
+
+.hour-row input[type="time"]{
+    height:42px;
+
+    border:1px solid #ddd;
+
+    border-radius:10px;
+
+    padding:0 10px;
+}
+
+/* PAGAMENTOS */
+
+.payments{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.payments label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+/* RESPONSIVO */
+
+@media(max-width:900px){
+
+    .settings-grid{
+        grid-template-columns:1fr;
+    }
+
+    .company-card,
+    .logo-card,
+    .profile-card,
+    .delivery-card,
+    .hours-card,
+    .security-card,
+    .payment-card{
+        grid-column:auto;
+    }
+
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .hour-row{
+        grid-template-columns:1fr;
+    }
+}
+
+/*-----------------------------------------------------------*/
+
+.divider{
+    border:none;
+    height:1px;
+    background:#e5e7eb;
+
+    margin:24px 0;
+}
+
+.payments{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.payments label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    cursor:pointer;
+
+    font-size:14px;
+}
+
+.payments input{
+    width:16px;
+    height:16px;
+}
