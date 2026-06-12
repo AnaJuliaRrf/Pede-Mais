@@ -35,7 +35,7 @@
           </p>
         </div>
 
-        <form>
+        <form id="cadastroForm">
 
           <!-- COLUNA ESQUERDA -->
           <div class="column">
@@ -44,41 +44,41 @@
 
             <div class="input-group full">
               <label>Seu nome</label>
-              <input type="text">
+              <input type="text" id="nome" required>
             </div>
 
             <div class="input-group full">
               <label>CPF</label>
-              <input type="text">
+              <input type="text" id="cpf">
             </div>
 
             <div class="row">
               <div class="input-group">
                 <label>Nascimento</label>
-                <input type="date">
+                <input type="date" id="nascimento">
               </div>
 
               <div class="input-group">
                 <label>Telefone</label>
-                <input type="text">
+                <input type="text" id="telefone">
               </div>
             </div>
 
             <div class="row">
               <div class="input-group">
                 <label>Endereço</label>
-                <input type="text">
+                <input type="text" id="endereco">
               </div>
 
               <div class="input-group small">
                 <label>CEP</label>
-                <input type="text">
+                <input type="text" id="cep">
               </div>
             </div>
 
             <div class="input-group full">
               <label>Email</label>
-              <input type="email">
+              <input type="email" id="email" required>
             </div>
 
           </div>
@@ -90,24 +90,24 @@
 
             <div class="input-group full">
               <label>Nome da empresa</label>
-              <input type="text">
+              <input type="text" id="empresaNome" required>
             </div>
 
             <div class="row">
 
               <div class="input-group">
                 <label>Cidade</label>
-                <input type="text">
+                <input type="text" id="empresaCidade">
               </div>
 
               <div class="input-group">
                 <label>Endereço</label>
-                <input type="text">
+                <input type="text" id="empresaEndereco">
               </div>
 
               <div class="input-group tiny">
                 <label>N°</label>
-                <input type="text">
+                <input type="text" id="empresaNumero">
               </div>
 
             </div>
@@ -116,12 +116,12 @@
 
               <div class="input-group">
                 <label>CNPJ / CPF</label>
-                <input type="text">
+                <input type="text" id="empresaDocumento">
               </div>
 
               <div class="input-group small">
                 <label>CEP</label>
-                <input type="text">
+                <input type="text" id="empresaCep">
               </div>
 
             </div>
@@ -130,26 +130,26 @@
 
               <div class="input-group">
                 <label>Foco</label>
-                <input type="text">
+                <input type="text" id="empresaFoco">
               </div>
 
               <div class="input-group">
                 <label>Telefone comercial</label>
-                <input type="text">
+                <input type="text" id="empresaTelefone">
               </div>
 
             </div>
 
             <div class="input-group full">
               <label>Email comercial</label>
-              <input type="email">
+              <input type="email" id="empresaEmail">
             </div>
 
             <div class="bottom-row">
 
               <div class="input-group password-field">
                 <label>Crie uma senha</label>
-                <input type="password">
+                <input type="password" id="senha" minlength="6" required>
               </div>
 
               <button type="submit">
@@ -168,5 +168,7 @@
 
   </main>
 
+  <script src="./js/api.js"></script>
+  <script src="./js/cadastro.js"></script>
 </body>
 </html>

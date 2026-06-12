@@ -13,6 +13,98 @@ function getJwtConfig() {
   return { secret, expiresIn };
 }
 
+async function cadastro(payload) {
+  const usuario = {
+    nome: typeof payload.nome === "string" ? payload.nome.trim() : "",
+    cpf: typeof payload.cpf === "string" ? payload.cpf.trim() : "",
+    nascimento:
+      typeof payload.nascimento === "string" ? payload.nascimento : "",
+    telefone: typeof payload.telefone === "string" ? payload.telefone.trim() : "",
+    endereco: typeof payload.endereco === "string" ? payload.endereco.trim() : "",
+    cep: typeof payload.cep === "string" ? payload.cep.trim() : "",
+    email:
+      typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "",
+    senha: typeof payload.senha === "string" ? payload.senha : "",
+  };
+
+  const empresaPayload = payload.empresa || {};
+  const empresa = {
+    nome:
+      typeof empresaPayload.nome === "string" ? empresaPayload.nome.trim() : "",
+    cidade:
+      typeof empresaPayload.cidade === "string"
+        ? empresaPayload.cidade.trim()
+        : "",
+    endereco:
+      typeof empresaPayload.endereco === "string"
+        ? empresaPayload.endereco.trim()
+        : "",
+    numero:
+      typeof empresaPayload.numero === "string"
+        ? empresaPayload.numero.trim()
+        : "",
+    documento:
+      typeof empresaPayload.documento === "string"
+        ? empresaPayload.documento.trim()
+        : "",
+    cep:
+      typeof empresaPayload.cep === "string" ? empresaPayload.cep.trim() : "",
+    foco:
+      typeof empresaPayload.foco === "string" ? empresaPayload.foco.trim() : "",
+    telefone:
+      typeof empresaPayload.telefone === "string"
+        ? empresaPayload.telefone.trim()
+        : "",
+    email:
+      typeof empresaPayload.email === "string"
+        ? empresaPayload.email.trim().toLowerCase()
+        : "",
+  };
+
+  if (!usuario.nome) {
+    return { status: 400, error: "nome é obrigatório" };
+  }
+
+  if (!usuario.email) {
+    return { status: 400, error: "email é obrigatório" };
+  }
+
+  if (!usuario.senha || usuario.senha.length < 6) {
+    return { status: 400, error: "senha deve ter pelo menos 6 caracteres" };
+  }
+
+  if (!empresa.nome) {
+    return { status: 400, error: "nome da empresa é obrigatório" };
+  }
+
+  const usuarioExistente = await authModel.findUsuarioByEmail(usuario.email);
+  if (usuarioExistente) {
+    return { status: 409, error: "email já cadastrado" };
+  }
+
+  const senhaHash = await bcrypt.hash(usuario.senha, 10);
+  const result = await authModel.createEmpresaAndUsuario({
+    empresa,
+    usuario: {
+      ...usuario,
+      senha: senhaHash,
+    },
+  });
+
+  return {
+    status: 201,
+    data: {
+      usuario: {
+        id: result.usuarioId,
+        nome: usuario.nome,
+        email: usuario.email,
+        perfil: "admin",
+        empresa_id: result.empresaId,
+      },
+    },
+  };
+}
+
 async function login(payload) {
   const email =
     typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
@@ -75,5 +167,6 @@ async function login(payload) {
 }
 
 module.exports = {
+  cadastro,
   login,
 };

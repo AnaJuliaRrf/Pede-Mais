@@ -25,7 +25,16 @@ async function apiRequest(endpoint, method = 'GET', data = null, auth = false) {
     const response = await fetch(`${API_URL}${endpoint}`, options);
 
     if (!response.ok) {
-        throw new Error('Erro na requisição');
+        let message = 'Erro na requisicao';
+
+        try {
+            const errorBody = await response.json();
+            message = errorBody.error || message;
+        } catch (error) {
+            message = response.statusText || message;
+        }
+
+        throw new Error(message);
     }
 
     return response.json();
