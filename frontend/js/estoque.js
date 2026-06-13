@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
+    if (typeof verificarAutenticacao === "function") {
+        verificarAutenticacao();
+    }
+
+    if (!localStorage.getItem("token") || !localStorage.getItem("empresaId")) {
+        return;
+    }
 
     carregarEstoque();
 
@@ -12,7 +19,7 @@ async function carregarEstoque() {
             localStorage.getItem("empresaId");
 
         const produtos = await apiRequest(
-            `/empresas/${empresaId}/produtos`,
+            `/empresas/${empresaId}/estoque`,
             "GET",
             null,
             true
@@ -43,13 +50,16 @@ function renderizarTabela(produtos) {
         let status = "";
         let statusClass = "";
 
-        if (produto.estoque <= 0) {
+        const quantidade = Number(produto.quantidade || 0);
+        const estoqueMinimo = Number(produto.estoque_minimo || 0);
+
+        if (quantidade <= 0) {
 
             status = "Sem estoque";
             statusClass = "danger";
 
         } else if (
-            produto.estoque <= produto.minimo
+            quantidade <= estoqueMinimo
         ) {
 
             status = "Baixo";
@@ -70,9 +80,9 @@ function renderizarTabela(produtos) {
 
                 <td>${produto.categoria}</td>
 
-                <td>${produto.estoque}</td>
+                <td>${quantidade}</td>
 
-                <td>${produto.minimo}</td>
+                <td>${estoqueMinimo}</td>
 
                 <td>
                     <span class="status ${statusClass}">
@@ -84,14 +94,14 @@ function renderizarTabela(produtos) {
 
                     <button
                         class="edit-btn"
-                        onclick="editarProduto(${produto.id})"
+                        onclick="editarProduto(${produto.produto_id})"
                     >
                         <i class="fa-solid fa-pen"></i>
                     </button>
 
                     <button
                         class="delete-btn"
-                        onclick="deletarProduto(${produto.id})"
+                        onclick="deletarProduto(${produto.produto_id})"
                     >
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -124,9 +134,11 @@ async function deletarProduto(id) {
     if (!confirmar) return;
 
     try {
+        const empresaId =
+            localStorage.getItem("empresaId");
 
         await apiRequest(
-            `/produtos/${id}`,
+            `/empresas/${empresaId}/produtos/${id}`,
             "DELETE",
             null,
             true

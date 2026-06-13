@@ -1,6 +1,8 @@
 const DASHBOARD_REFRESH_INTERVAL = 60000; // atualiza a cada 60 segundos
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (!document.getElementById("tabelaPedidos")) return;
+
   verificarAutenticacao();
   setTodayDate();
   carregarDashboard();
@@ -91,6 +93,7 @@ function setTodayDate() {
 }
 
 function setTodayDate() {
+  if (!document.getElementById('todayDate')) return;
 
   const data = new Date();
 

@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const overlay = document.getElementById("overlay");
 
+  if (!painel || !fechar || !overlay) return;
+
   cards.forEach(card => {
 
     card.addEventListener("click", () => {
