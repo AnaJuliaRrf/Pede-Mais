@@ -117,11 +117,53 @@ function renderizarTabela(produtos) {
 }
 
 function editarProduto(id) {
+    const linha = document
+        .querySelector(`button[onclick="editarProduto(${id})"]`)
+        ?.closest("tr");
 
-    console.log(
-        "Editar produto:",
-        id
-    );
+    const quantidadeAtual = linha?.children[2]?.textContent || "0";
+    const minimoAtual = linha?.children[3]?.textContent || "0";
+    const quantidade = prompt("Informe a quantidade em estoque:", quantidadeAtual);
+
+    if (quantidade === null) return;
+
+    const estoqueMinimo = prompt("Informe o estoque minimo:", minimoAtual);
+
+    if (estoqueMinimo === null) return;
+
+    atualizarEstoque(id, {
+        quantidade: Number(quantidade),
+        estoque_minimo: Number(estoqueMinimo)
+    });
+
+}
+
+async function atualizarEstoque(id, payload) {
+
+    try {
+
+        const empresaId =
+            localStorage.getItem("empresaId");
+
+        await apiRequest(
+            `/empresas/${empresaId}/estoque/${id}`,
+            "PATCH",
+            payload,
+            true
+        );
+
+        carregarEstoque();
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao atualizar estoque:",
+            error
+        );
+
+        alert(error.message);
+
+    }
 
 }
 

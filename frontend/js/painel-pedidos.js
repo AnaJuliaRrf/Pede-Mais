@@ -1,201 +1,119 @@
 document.addEventListener("DOMContentLoaded", () => {
-
-  const cards = document.querySelectorAll(".card");
-
   const painel = document.getElementById("painelDetalhes");
-
   const fechar = document.getElementById("fecharPainel");
-
   const overlay = document.getElementById("overlay");
 
   if (!painel || !fechar || !overlay) return;
 
-  cards.forEach(card => {
+  document.addEventListener("click", (event) => {
+    const card = event.target.closest(".card");
+    if (!card || !card.closest(".kanban")) return;
 
-    card.addEventListener("click", () => {
-
-      // REMOVE seleção anterior
-      cards.forEach(c => {
-        c.classList.remove("selecionado");
-      });
-
-      // ADICIONA seleção atual
-      card.classList.add("selecionado");
-
-      // DADOS
-      document.getElementById("detalhePedido").innerText =
-        card.dataset.pedido;
-
-      document.getElementById("detalheCliente").innerText =
-        card.dataset.cliente;
-
-      document.getElementById("detalheProduto").innerText =
-        card.dataset.produto;
-
-      document.getElementById("detalheTipo").innerText =
-        card.dataset.tipo;
-
-      document.getElementById("detalhePagamento").innerText =
-        card.dataset.pagamento;
-
-      document.getElementById("detalheHora").innerText =
-        card.dataset.hora;
-
-      // =========================
-      // STATUS DINÂMICO
-      // =========================
-
-      const coluna = card.closest(".coluna").id;
-
-      const statusBadge =
-        document.getElementById("statusBadge");
-
-      // REMOVE classes antigas
-      statusBadge.classList.remove(
-        "pendente",
-        "preparo",
-        "entrega",
-        "entregue"
-      );
-
-      // =========================
-      // HISTÓRICO DINÂMICO
-      // =========================
-
-      const histRecebido =
-        document.getElementById("histRecebido");
-
-      const histPreparo =
-        document.getElementById("histPreparo");
-
-      const histEntrega =
-        document.getElementById("histEntrega");
-
-      const histEntregue =
-        document.getElementById("histEntregue");
-
-      // LIMPA
-      histRecebido.classList.remove("ativo");
-      histPreparo.classList.remove("ativo");
-      histEntrega.classList.remove("ativo");
-      histEntregue.classList.remove("ativo");
-
-      // SEMPRE ATIVO
-      histRecebido.classList.add("ativo");
-
-      // =========================
-      // PENDENTE
-      // =========================
-
-      if(coluna === "pendente"){
-
-        statusBadge.innerHTML = `
-          <i class="fa-solid fa-circle"></i>
-          Pendente
-        `;
-
-        statusBadge.classList.add("pendente");
-
-      }
-
-      // =========================
-      // PREPARO
-      // =========================
-
-      if(coluna === "preparo"){
-
-        statusBadge.innerHTML = `
-          <i class="fa-solid fa-circle"></i>
-          Em preparo
-        `;
-
-        statusBadge.classList.add("preparo");
-
-        histPreparo.classList.add("ativo");
-
-      }
-
-      // =========================
-      // ENTREGA
-      // =========================
-
-      if(coluna === "entrega"){
-
-        statusBadge.innerHTML = `
-          <i class="fa-solid fa-circle"></i>
-          Saiu para entrega
-        `;
-
-        statusBadge.classList.add("entrega");
-
-        histPreparo.classList.add("ativo");
-
-        histEntrega.classList.add("ativo");
-
-      }
-
-      // =========================
-      // ENTREGUE
-      // =========================
-
-      if(coluna === "entregue"){
-
-        statusBadge.innerHTML = `
-          <i class="fa-solid fa-circle"></i>
-          Entregue
-        `;
-
-        statusBadge.classList.add("entregue");
-
-        histPreparo.classList.add("ativo");
-
-        histEntrega.classList.add("ativo");
-
-        histEntregue.classList.add("ativo");
-
-      }
-
-      // ABRIR
-      painel.classList.add("ativo");
-
-      overlay.classList.add("ativo");
-
+    document.querySelectorAll(".card").forEach((item) => {
+      item.classList.remove("selecionado");
     });
 
+    card.classList.add("selecionado");
+    preencherPainelPedido(card);
+    painel.classList.add("ativo");
+    overlay.classList.add("ativo");
   });
 
-  // FECHAR
-  function fecharPainel(){
-
+  function fecharPainel() {
     painel.classList.remove("ativo");
-
     overlay.classList.remove("ativo");
 
-    cards.forEach(card => {
+    document.querySelectorAll(".card").forEach((card) => {
       card.classList.remove("selecionado");
     });
-
   }
 
   fechar.addEventListener("click", fecharPainel);
-
   overlay.addEventListener("click", fecharPainel);
-
 });
 
-function setTodayDate() {
+function preencherPainelPedido(card) {
+  const pedido = typeof buscarPedidoPorId === "function"
+    ? buscarPedidoPorId(card.dataset.id)
+    : null;
 
-  const data = new Date();
+  document.getElementById("detalhePedido").innerText = card.dataset.pedido;
+  document.getElementById("detalheCliente").innerText = card.dataset.cliente;
+  document.getElementById("detalheProduto").innerText = card.dataset.produto;
+  document.getElementById("detalheTipo").innerText = card.dataset.tipo;
+  document.getElementById("detalhePagamento").innerText = card.dataset.pagamento;
+  document.getElementById("detalheHora").innerText = card.dataset.hora;
 
-  const opcoes = {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
+  renderizarStatusPainel(card.dataset.status);
+  renderizarItensPainel(pedido);
+  renderizarEntregaPainel(pedido);
+}
+
+function renderizarStatusPainel(status) {
+  const statusBadge = document.getElementById("statusBadge");
+  const statusClass = {
+    pendente: "pendente",
+    em_preparo: "preparo",
+    saiu_para_entrega: "entrega",
+    entregue: "entregue",
+  }[status] || "pendente";
+
+  statusBadge.classList.remove("pendente", "preparo", "entrega", "entregue");
+  statusBadge.classList.add(statusClass);
+  statusBadge.innerHTML = `
+    <i class="fa-solid fa-circle"></i>
+    ${formatarStatusPedido(status)}
+  `;
+
+  const historico = {
+    histRecebido: true,
+    histPreparo: ["em_preparo", "saiu_para_entrega", "entregue"].includes(status),
+    histEntrega: ["saiu_para_entrega", "entregue"].includes(status),
+    histEntregue: status === "entregue",
   };
 
-  const dataFormatada = data.toLocaleDateString('pt-BR', opcoes);
+  Object.entries(historico).forEach(([id, ativo]) => {
+    document.getElementById(id)?.classList.toggle("ativo", ativo);
+  });
+}
 
-  document.getElementById('todayDate').innerHTML =
-    `Hoje, ${dataFormatada}`;
+function renderizarItensPainel(pedido) {
+  const tbody = document.querySelector("#painelDetalhes table tbody");
+  const subtotal = document.querySelector("#painelDetalhes .subtotal strong");
 
+  if (!tbody || !pedido) return;
+
+  tbody.innerHTML = pedido.itens
+    .map((item) => `
+      <tr>
+        <td>${escapeHtml(item.produto_nome || "-")}</td>
+        <td>${Number(item.quantidade)}x</td>
+        <td>${formatCurrency(item.subtotal)}</td>
+      </tr>
+    `)
+    .join("");
+
+  if (subtotal) {
+    subtotal.textContent = formatCurrency(pedido.valor_total);
+  }
+}
+
+function renderizarEntregaPainel(pedido) {
+  const entregaGrid = document.querySelector("#painelDetalhes .entrega-grid");
+  if (!entregaGrid || !pedido) return;
+
+  entregaGrid.innerHTML = `
+    <div>
+      <span>Endereco</span>
+      <strong>${escapeHtml(pedido.endereco || "Retirada no local")}</strong>
+    </div>
+    <div>
+      <span>Telefone</span>
+      <strong>${escapeHtml(pedido.telefone || "-")}</strong>
+    </div>
+    <div>
+      <span>Total</span>
+      <strong>${formatCurrency(pedido.valor_total)}</strong>
+    </div>
+  `;
 }

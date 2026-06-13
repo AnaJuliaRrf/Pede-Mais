@@ -12,9 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
 async function carregarDashboard() {
   try {
     const empresaId = localStorage.getItem("empresaId");
+    const hoje = new Date().toISOString().slice(0, 10);
 
     const [pedidos, estoqueBaixo] = await Promise.all([
-      apiRequest(`/empresas/${empresaId}/pedidos`, "GET", null, true),
+      apiRequest(
+        `/empresas/${empresaId}/pedidos?data_inicio=${hoje}&data_fim=${hoje}`,
+        "GET",
+        null,
+        true
+      ),
       apiRequest(`/empresas/${empresaId}/estoque/baixo`, "GET", null, true)
     ]);
 
@@ -22,7 +28,7 @@ async function carregarDashboard() {
     const quantidadeEstoqueBaixo = estoqueBaixo.length;
 
     const faturamentoHoje = pedidos.reduce((total, pedido) => {
-      return total + Number(pedido.total || 0);
+      return total + Number(pedido.valor_total || 0);
     }, 0);
 
     atualizarCards({
@@ -61,35 +67,32 @@ function atualizarTabela(pedidos) {
   const tabela = document.getElementById("tabelaPedidos");
   tabela.innerHTML = "";
 
+  if (!pedidos.length) {
+    tabela.innerHTML = `
+      <tr>
+        <td colspan="7">Nenhum pedido encontrado hoje.</td>
+      </tr>
+    `;
+    return;
+  }
+
   pedidos.forEach((pedido) => {
     tabela.innerHTML += `
       <tr>
         <td>#${pedido.id}</td>
-        <td>${pedido.cliente || "-"}</td>
-        <td>${pedido.itens || "-"}</td>
-        <td>${pedido.pagamento || "-"}</td>
-        <td>${pedido.entrega || "-"}</td>
+        <td>${pedido.cliente_nome || "-"}</td>
+        <td>${formatarItensPedido(pedido.itens)}</td>
+        <td>${formatarTexto(pedido.forma_pagamento)}</td>
+        <td>${formatarTexto(pedido.tipo_recebimento)}</td>
         <td>
           <span class="status">
-            ${pedido.status || "-"}
+            ${formatarStatusPedido(pedido.status)}
           </span>
         </td>
-        <td>${pedido.horario || "-"}</td>
+        <td>${formatarDataHora(pedido.criado_em)}</td>
       </tr>
     `;
   });
-}
-
-function setTodayDate() {
-  const el = document.querySelector('.date-box');
-  if (!el) return;
-
-  const now = new Date();
-  const day = String(now.getDate()).padStart(2, '0');
-  const month = now.toLocaleString('pt-BR', { month: 'long' });
-  const year = now.getFullYear();
-
-  el.textContent = `Hoje, ${day} de ${month} de ${year}`;
 }
 
 function setTodayDate() {
@@ -108,4 +111,41 @@ function setTodayDate() {
   document.getElementById('todayDate').innerHTML =
     `Hoje, ${dataFormatada}`;
 
+}
+
+function formatarItensPedido(itens = []) {
+  if (!itens.length) return "-";
+
+  return itens
+    .map((item) => `${Number(item.quantidade)}x ${item.produto_nome}`)
+    .join(", ");
+}
+
+function formatarStatusPedido(status = "") {
+  const labels = {
+    pendente: "Pendente",
+    em_preparo: "Em preparo",
+    saiu_para_entrega: "Saiu para entrega",
+    entregue: "Entregue",
+    cancelado: "Cancelado",
+  };
+
+  return labels[status] || "-";
+}
+
+function formatarTexto(value = "") {
+  if (!value) return "-";
+
+  return String(value)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatarDataHora(value) {
+  if (!value) return "-";
+
+  return new Date(value).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

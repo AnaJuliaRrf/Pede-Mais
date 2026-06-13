@@ -1,186 +1,215 @@
-// =========================
-// ELEMENTOS
-// =========================
+const productState = {
+  produtos: [],
+  editingId: null,
+};
 
-const newProductBtn = document.querySelector(".new-product")
+document.addEventListener("DOMContentLoaded", () => {
+  const productsGrid = document.querySelector(".products-grid");
+  if (!productsGrid) return;
 
-const sidebar = document.getElementById("productSidebar")
+  verificarAutenticacao();
+  bindProdutoEventos();
+  carregarProdutos();
+});
 
-const overlay = document.getElementById("overlay")
+function bindProdutoEventos() {
+  document.querySelector(".new-product")?.addEventListener("click", () => {
+    abrirProdutoSidebar();
+  });
 
-const closeSidebarBtn = document.getElementById("closeSidebar")
+  document.getElementById("closeSidebar")?.addEventListener("click", closeSidebar);
+  document.querySelector(".cancel-btn")?.addEventListener("click", closeSidebar);
+  document.getElementById("overlay")?.addEventListener("click", closeSidebar);
+  document.getElementById("searchInput")?.addEventListener("input", renderizarProdutos);
+  document.getElementById("categoryFilter")?.addEventListener("change", renderizarProdutos);
+  document.querySelector(".save-btn")?.addEventListener("click", salvarProduto);
 
-const cancelBtn = document.querySelector(".cancel-btn")
-
-const searchInput = document.getElementById("searchInput")
-
-const categoryFilter = document.getElementById("categoryFilter")
-
-const productsGrid = document.querySelector(".products-grid")
-
-
-// =========================
-// ABRIR SIDEBAR
-// =========================
-
-newProductBtn.addEventListener("click", () => {
-
-  sidebar.classList.add("active")
-
-  overlay.classList.add("active")
-
-})
-
-
-// =========================
-// FECHAR SIDEBAR
-// =========================
-
-function closeSidebar(){
-
-  sidebar.classList.remove("active")
-
-  overlay.classList.remove("active")
-
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeSidebar();
+  });
 }
 
+async function carregarProdutos() {
+  try {
+    const empresaId = getEmpresaId();
+    productState.produtos = await apiRequest(
+      `/empresas/${empresaId}/produtos`,
+      "GET",
+      null,
+      true,
+    );
+    renderizarProdutos();
+  } catch (error) {
+    console.error("Erro ao carregar produtos:", error);
+    alert(error.message);
+  }
+}
 
-// BOTÃO X
-closeSidebarBtn.addEventListener("click", closeSidebar)
+function renderizarProdutos() {
+  const productsGrid = document.querySelector(".products-grid");
+  if (!productsGrid) return;
 
+  const searchText = document.getElementById("searchInput")?.value.toLowerCase() || "";
+  const selectedCategory =
+    document.getElementById("categoryFilter")?.value.toLowerCase() || "all";
 
-// BOTÃO CANCELAR
-cancelBtn.addEventListener("click", closeSidebar)
+  const produtosFiltrados = productState.produtos.filter((produto) => {
+    const nome = String(produto.nome || "").toLowerCase();
+    const categoria = String(produto.categoria || "").toLowerCase();
+    const matchesSearch = nome.includes(searchText);
+    const matchesCategory = selectedCategory === "all" || categoria.includes(selectedCategory);
 
+    return matchesSearch && matchesCategory;
+  });
 
-// CLICAR NO FUNDO ESCURO
-overlay.addEventListener("click", closeSidebar)
-
-
-// =========================
-// FECHAR COM ESC
-// =========================
-
-document.addEventListener("keydown", (event) => {
-
-  if(event.key === "Escape"){
-
-    closeSidebar()
-
+  if (!produtosFiltrados.length) {
+    productsGrid.innerHTML = `<p>Nenhum produto encontrado.</p>`;
+    return;
   }
 
-})
-
-
-// =========================
-// BUSCAR PRODUTOS
-// =========================
-
-searchInput.addEventListener("input", filterProducts)
-
-categoryFilter.addEventListener("change", filterProducts)
-
-
-function filterProducts(){
-
-  const searchText = searchInput.value.toLowerCase()
-
-  const selectedCategory = categoryFilter.value.toLowerCase()
-
-  const cards = document.querySelectorAll(".product-card")
-
-  cards.forEach(card => {
-
-    const title = card.querySelector("h3").textContent.toLowerCase()
-
-    const category = card.querySelector(".category").textContent.toLowerCase()
-
-    const matchesSearch = title.includes(searchText)
-
-    const matchesCategory =
-      selectedCategory === "all" ||
-      category.includes(selectedCategory)
-
-    if(matchesSearch && matchesCategory){
-
-      card.style.display = "flex"
-
-    }else{
-
-      card.style.display = "none"
-
-    }
-
-  })
-
+  productsGrid.innerHTML = produtosFiltrados
+    .map((produto) => {
+      const ativo = Boolean(produto.ativo);
+      return `
+        <div class="product-card" data-id="${produto.id}">
+          <div class="product-image"></div>
+          <div class="product-info">
+            <h3>${escapeHtml(produto.nome)}</h3>
+            <div class="category">${escapeHtml(produto.categoria || "Sem categoria")}</div>
+            <div class="price">${formatCurrency(produto.preco)}</div>
+            <div class="status">${ativo ? "Disponivel" : "Indisponivel"}</div>
+            <div class="card-footer">
+              <button class="edit-btn" type="button" onclick="editarProduto(${produto.id})">
+                <i class="fa-solid fa-pen"></i>
+                Editar
+              </button>
+              <div class="right-actions">
+                <label class="switch">
+                  <input type="checkbox" ${ativo ? "checked" : ""} onchange="alternarProduto(${produto.id}, this.checked)">
+                  <span class="slider"></span>
+                </label>
+                <i class="fa-regular fa-trash-can delete-btn" onclick="deletarProduto(${produto.id})"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
 }
 
+function abrirProdutoSidebar(produto = null) {
+  productState.editingId = produto?.id || null;
+  document.getElementById("productSidebarTitle").textContent = produto
+    ? "Editar produto"
+    : "Novo produto";
 
-// =========================
-// SWITCH STATUS
-// =========================
+  document.getElementById("produtoNome").value = produto?.nome || "";
+  document.getElementById("produtoCategoria").value = produto?.categoria || "Selecione uma categoria";
+  document.getElementById("produtoPreco").value = produto?.preco
+    ? String(produto.preco).replace(".", ",")
+    : "";
+  document.getElementById("produtoDescricao").value = produto?.descricao || "";
+  document.getElementById("produtoAtivo").checked = produto?.ativo ?? true;
 
-const switches = document.querySelectorAll(".switch input")
+  document.getElementById("productSidebar").classList.add("active");
+  document.getElementById("overlay").classList.add("active");
+}
 
-switches.forEach(item => {
+function closeSidebar() {
+  document.getElementById("productSidebar")?.classList.remove("active");
+  document.getElementById("overlay")?.classList.remove("active");
+  productState.editingId = null;
+}
 
-  item.addEventListener("change", () => {
+async function salvarProduto() {
+  const nome = document.getElementById("produtoNome").value.trim();
+  const categoria = document.getElementById("produtoCategoria").value;
+  const preco = parseMoney(document.getElementById("produtoPreco").value);
+  const descricao = document.getElementById("produtoDescricao").value.trim();
+  const ativo = document.getElementById("produtoAtivo").checked;
 
-    console.log("Status alterado")
+  if (!nome || !Number.isFinite(preco) || preco <= 0) {
+    alert("Informe nome e preco valido.");
+    return;
+  }
 
-  })
+  const payload = {
+    nome,
+    categoria: categoria === "Selecione uma categoria" ? null : categoria,
+    preco,
+    descricao: descricao || null,
+    ativo,
+  };
 
-})
+  try {
+    const empresaId = getEmpresaId();
+    const endpoint = productState.editingId
+      ? `/empresas/${empresaId}/produtos/${productState.editingId}`
+      : `/empresas/${empresaId}/produtos`;
+    const method = productState.editingId ? "PUT" : "POST";
 
+    await apiRequest(endpoint, method, payload, true);
+    await carregarProdutos();
+    closeSidebar();
+  } catch (error) {
+    console.error("Erro ao salvar produto:", error);
+    alert(error.message);
+  }
+}
 
-// =========================
-// BOTÃO DELETE
-// =========================
+function editarProduto(id) {
+  const produto = productState.produtos.find((item) => Number(item.id) === Number(id));
+  if (produto) abrirProdutoSidebar(produto);
+}
 
-const deleteButtons = document.querySelectorAll(".delete-btn")
+async function alternarProduto(id, ativo) {
+  const produto = productState.produtos.find((item) => Number(item.id) === Number(id));
+  if (!produto) return;
 
-deleteButtons.forEach(button => {
+  try {
+    await apiRequest(
+      `/empresas/${getEmpresaId()}/produtos/${id}`,
+      "PUT",
+      { ...produto, ativo },
+      true,
+    );
+    await carregarProdutos();
+  } catch (error) {
+    console.error("Erro ao alterar status do produto:", error);
+    alert(error.message);
+    await carregarProdutos();
+  }
+}
 
-  button.addEventListener("click", () => {
+async function deletarProduto(id) {
+  if (!confirm("Deseja excluir esse produto?")) return;
 
-    const card = button.closest(".product-card")
+  try {
+    await apiRequest(`/empresas/${getEmpresaId()}/produtos/${id}`, "DELETE", null, true);
+    await carregarProdutos();
+  } catch (error) {
+    console.error("Erro ao deletar produto:", error);
+    alert(error.message);
+  }
+}
 
-    card.remove()
+function parseMoney(value) {
+  return Number(String(value).replace(/\./g, "").replace(",", "."));
+}
 
-  })
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
 
-})
-
-
-// =========================
-// BOTÃO EDITAR
-// =========================
-
-const editButtons = document.querySelectorAll(".edit-btn")
-
-editButtons.forEach(button => {
-
-  button.addEventListener("click", () => {
-
-    sidebar.classList.add("active")
-
-    overlay.classList.add("active")
-
-  })
-
-})
-
-
-// =========================
-// SIMULAÇÃO SALVAR PRODUTO
-// =========================
-
-const saveBtn = document.querySelector(".save-btn")
-
-saveBtn.addEventListener("click", () => {
-
-  alert("Produto salvo com sucesso!")
-
-  closeSidebar()
-
-})
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}

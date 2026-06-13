@@ -143,48 +143,7 @@
   </div>
 
   <!-- GRID -->
-  <div class="products-grid">
-
-    <!-- CARD -->
-    <div class="product-card">
-
-      <div class="product-image"></div>
-
-      <div class="product-info">
-
-        <h3>Pizza Calabresa</h3>
-
-        <div class="category">Pizzas</div>
-
-        <div class="price">R$ 35,00</div>
-
-        <div class="status">Disponível</div>
-
-        <div class="card-footer">
-
-          <button class="edit-btn">
-            <i class="fa-solid fa-pen"></i>
-            Editar
-          </button>
-
-          <div class="right-actions">
-
-            <label class="switch">
-              <input type="checkbox" checked>
-              <span class="slider"></span>
-            </label>
-
-            <i class="fa-regular fa-trash-can delete-btn"></i>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
+  <div class="products-grid"></div>
 
 </div>
 
@@ -200,7 +159,7 @@
   <div class="sidebar-header">
 
     <div>
-      <h2>Novo produto</h2>
+      <h2 id="productSidebarTitle">Novo produto</h2>
       <p>Preencha as informações para cadastrar um novo produto no seu cardápio.</p>
     </div>
 
@@ -217,7 +176,7 @@
 
       <div class="input-group">
         <label>Nome do produto *</label>
-        <input type="text" placeholder="Ex.: Pizza Calabresa">
+        <input type="text" id="produtoNome" placeholder="Ex.: Pizza Calabresa">
       </div>
 
       <div class="two-columns">
@@ -225,7 +184,7 @@
         <div class="input-group">
           <label>Categoria *</label>
 
-          <select>
+          <select id="produtoCategoria">
             <option>Selecione uma categoria</option>
             <option>Pizza</option>
             <option>Lanche</option>
@@ -235,7 +194,7 @@
 
         <div class="input-group">
           <label>Preço (R$)</label>
-          <input type="text" placeholder="Ex.: 35,00">
+          <input type="text" id="produtoPreco" placeholder="Ex.: 35,00">
         </div>
 
       </div>
@@ -244,12 +203,12 @@
 
         <div class="input-group">
           <label>Custo (R$)</label>
-          <input type="text" placeholder="Ex.: 18,00">
+          <input type="text" id="produtoCusto" placeholder="Ex.: 18,00">
         </div>
 
         <div class="input-group">
           <label>Unidade</label>
-          <input type="text" placeholder="Ex.: un, kg, ml">
+          <input type="text" id="produtoUnidade" placeholder="Ex.: un, kg, ml">
         </div>
 
       </div>
@@ -257,7 +216,7 @@
       <div class="input-group">
         <label>Descrição</label>
 
-        <textarea placeholder="Descreva o produto, ingredientes, detalhes, etc."></textarea>
+        <textarea id="produtoDescricao" placeholder="Descreva o produto, ingredientes, detalhes, etc."></textarea>
       </div>
 
       <div class="switches">
@@ -267,7 +226,7 @@
           <span>Status</span>
 
           <label class="switch">
-            <input type="checkbox" checked>
+            <input type="checkbox" id="produtoAtivo" checked>
             <span class="slider"></span>
           </label>
 
