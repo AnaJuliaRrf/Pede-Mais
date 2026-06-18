@@ -127,9 +127,6 @@
     <select id="categoryFilter">
 
       <option value="all">Todas as categorias</option>
-      <option value="Pizza">Pizza</option>
-      <option value="Lanche">Lanche</option>
-      <option value="Bebida">Bebida</option>
 
     </select>
 
@@ -141,48 +138,7 @@
   </div>
 
   <!-- GRID -->
-  <div class="products-grid">
-
-    <!-- CARD -->
-    <div class="product-card">
-
-      <div class="product-image"></div>
-
-      <div class="product-info">
-
-        <h3>Pizza Calabresa</h3>
-
-        <div class="category">Pizzas</div>
-
-        <div class="price">R$ 35,00</div>
-
-        <div class="status">Disponível</div>
-
-        <div class="card-footer">
-
-          <button class="edit-btn">
-            <i class="fa-solid fa-pen"></i>
-            Editar
-          </button>
-
-          <div class="right-actions">
-
-            <label class="switch">
-              <input type="checkbox" checked>
-              <span class="slider"></span>
-            </label>
-
-            <i class="fa-regular fa-trash-can delete-btn"></i>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
+  <div class="products-grid"></div>
 
 </div>
 
@@ -215,7 +171,7 @@
 
       <div class="input-group">
         <label>Nome do produto *</label>
-        <input type="text" placeholder="Ex.: Pizza Calabresa">
+        <input type="text" placeholder="Ex.: Bolo de Chocolate">
       </div>
 
       <div class="two-columns">
@@ -225,9 +181,11 @@
 
           <select>
             <option>Selecione uma categoria</option>
-            <option>Pizza</option>
-            <option>Lanche</option>
-            <option>Bebida</option>
+            <option>Bolos</option>
+            <option>Docinhos</option>
+            <option>Sobremesas</option>
+            <option>Tortas</option>
+            <option>Cupcakes</option>
           </select>
         </div>
 
@@ -403,8 +361,6 @@
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/dashboard.js"></script>
-  <script src="js/kanban.js"></script>
-  <script src="js/painel-pedidos.js"></script>
   <script src="js/produtos.js"></script>
   <script>setTodayDate();</script>
 

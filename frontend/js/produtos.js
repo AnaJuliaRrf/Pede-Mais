@@ -1,186 +1,187 @@
-// =========================
-// ELEMENTOS
-// =========================
+const newProductBtn = document.querySelector(".new-product");
+const sidebar = document.getElementById("productSidebar");
+const overlay = document.getElementById("overlay");
+const closeSidebarBtn = document.getElementById("closeSidebar");
+const cancelBtn = document.querySelector(".cancel-btn");
+const searchInput = document.getElementById("searchInput");
+const categoryFilter = document.getElementById("categoryFilter");
+const productsGrid = document.querySelector(".products-grid");
+const saveBtn = document.querySelector(".save-btn");
 
-const newProductBtn = document.querySelector(".new-product")
+let produtosCardapio = [];
 
-const sidebar = document.getElementById("productSidebar")
-
-const overlay = document.getElementById("overlay")
-
-const closeSidebarBtn = document.getElementById("closeSidebar")
-
-const cancelBtn = document.querySelector(".cancel-btn")
-
-const searchInput = document.getElementById("searchInput")
-
-const categoryFilter = document.getElementById("categoryFilter")
-
-const productsGrid = document.querySelector(".products-grid")
-
-
-// =========================
-// ABRIR SIDEBAR
-// =========================
-
-newProductBtn.addEventListener("click", () => {
-
-  sidebar.classList.add("active")
-
-  overlay.classList.add("active")
-
-})
-
-
-// =========================
-// FECHAR SIDEBAR
-// =========================
-
-function closeSidebar(){
-
-  sidebar.classList.remove("active")
-
-  overlay.classList.remove("active")
-
-}
-
-
-// BOTÃO X
-closeSidebarBtn.addEventListener("click", closeSidebar)
-
-
-// BOTÃO CANCELAR
-cancelBtn.addEventListener("click", closeSidebar)
-
-
-// CLICAR NO FUNDO ESCURO
-overlay.addEventListener("click", closeSidebar)
-
-
-// =========================
-// FECHAR COM ESC
-// =========================
-
-document.addEventListener("keydown", (event) => {
-
-  if(event.key === "Escape"){
-
-    closeSidebar()
-
+document.addEventListener("DOMContentLoaded", () => {
+  if (!verificarAutenticacao()) {
+    return;
   }
 
-})
+  configurarAcoes();
+  carregarProdutos();
+});
 
+function configurarAcoes() {
+  newProductBtn.addEventListener("click", abrirSidebar);
+  closeSidebarBtn.addEventListener("click", closeSidebar);
+  cancelBtn.addEventListener("click", closeSidebar);
+  overlay.addEventListener("click", closeSidebar);
 
-// =========================
-// BUSCAR PRODUTOS
-// =========================
-
-searchInput.addEventListener("input", filterProducts)
-
-categoryFilter.addEventListener("change", filterProducts)
-
-
-function filterProducts(){
-
-  const searchText = searchInput.value.toLowerCase()
-
-  const selectedCategory = categoryFilter.value.toLowerCase()
-
-  const cards = document.querySelectorAll(".product-card")
-
-  cards.forEach(card => {
-
-    const title = card.querySelector("h3").textContent.toLowerCase()
-
-    const category = card.querySelector(".category").textContent.toLowerCase()
-
-    const matchesSearch = title.includes(searchText)
-
-    const matchesCategory =
-      selectedCategory === "all" ||
-      category.includes(selectedCategory)
-
-    if(matchesSearch && matchesCategory){
-
-      card.style.display = "flex"
-
-    }else{
-
-      card.style.display = "none"
-
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeSidebar();
     }
+  });
 
-  })
-
+  searchInput.addEventListener("input", filterProducts);
+  categoryFilter.addEventListener("change", filterProducts);
+  saveBtn.addEventListener("click", () => {
+    alert("Produto salvo com sucesso!");
+    closeSidebar();
+  });
 }
 
+async function carregarProdutos() {
+  try {
+    const empresaId = localStorage.getItem("empresaId");
+    produtosCardapio = await apiRequest(
+      `/empresas/${empresaId}/produtos`,
+      "GET",
+      null,
+      true,
+    );
 
-// =========================
-// SWITCH STATUS
-// =========================
+    popularCategorias(produtosCardapio);
+    renderizarProdutos(produtosCardapio);
+  } catch (error) {
+    console.error("Erro ao carregar produtos:", error);
+  }
+}
 
-const switches = document.querySelectorAll(".switch input")
+function popularCategorias(produtos) {
+  const categoriaAtual = categoryFilter.value;
+  const categorias = [...new Set(produtos.map((produto) => produto.categoria))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
 
-switches.forEach(item => {
+  categoryFilter.innerHTML = '<option value="all">Todas as categorias</option>';
 
-  item.addEventListener("change", () => {
+  categorias.forEach((categoria) => {
+    const option = document.createElement("option");
+    option.value = categoria;
+    option.textContent = categoria;
+    categoryFilter.appendChild(option);
+  });
 
-    console.log("Status alterado")
+  if (categorias.includes(categoriaAtual)) {
+    categoryFilter.value = categoriaAtual;
+  }
+}
 
-  })
+function renderizarProdutos(produtos) {
+  productsGrid.innerHTML = "";
 
-})
+  produtos.forEach((produto) => {
+    productsGrid.innerHTML += `
+      <div class="product-card" data-categoria="${produto.categoria || ""}">
+        <div class="product-image">
+          <span>${getProdutoIcone(produto.categoria)}</span>
+        </div>
+        <div class="product-info">
+          <h3>${produto.nome}</h3>
+          <div class="category">${produto.categoria || "-"}</div>
+          <div class="price">${formatarMoeda(produto.preco)}</div>
+          <div class="status">${produto.ativo ? "Disponível" : "Indisponível"}</div>
+          <div class="card-footer">
+            <button class="edit-btn" type="button">
+              <i class="fa-solid fa-pen"></i>
+              Editar
+            </button>
+            <div class="right-actions">
+              <label class="switch">
+                <input type="checkbox" ${produto.ativo ? "checked" : ""}>
+                <span class="slider"></span>
+              </label>
+              <i class="fa-regular fa-trash-can delete-btn"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
 
+  conectarBotoesCards();
+}
 
-// =========================
-// BOTÃO DELETE
-// =========================
+function filterProducts() {
+  const searchText = searchInput.value.trim().toLowerCase();
+  const selectedCategory = categoryFilter.value;
+  const produtosFiltrados =
+    selectedCategory === "all"
+      ? produtosCardapio
+      : produtosCardapio.filter(
+          (produto) => produto.categoria === selectedCategory,
+        );
 
-const deleteButtons = document.querySelectorAll(".delete-btn")
+  renderizarProdutos(
+    produtosFiltrados.filter((produto) =>
+      produto.nome.toLowerCase().includes(searchText),
+    ),
+  );
+}
 
-deleteButtons.forEach(button => {
+function conectarBotoesCards() {
+  document.querySelectorAll(".switch input").forEach((item) => {
+    item.addEventListener("change", () => {
+      console.log("Status alterado");
+    });
+  });
 
-  button.addEventListener("click", () => {
+  document.querySelectorAll(".delete-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const card = button.closest(".product-card");
+      card.remove();
+    });
+  });
 
-    const card = button.closest(".product-card")
+  document.querySelectorAll(".edit-btn").forEach((button) => {
+    button.addEventListener("click", abrirSidebar);
+  });
+}
 
-    card.remove()
+function abrirSidebar() {
+  sidebar.classList.add("active");
+  overlay.classList.add("active");
+}
 
-  })
+function closeSidebar() {
+  sidebar.classList.remove("active");
+  overlay.classList.remove("active");
+}
 
-})
+function formatarMoeda(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
 
+function getProdutoIcone(categoria = "") {
+  const categoriaNormalizada = categoria.toLowerCase();
 
-// =========================
-// BOTÃO EDITAR
-// =========================
+  if (categoriaNormalizada.includes("bolo")) {
+    return "BOLO";
+  }
 
-const editButtons = document.querySelectorAll(".edit-btn")
+  if (categoriaNormalizada.includes("cupcake")) {
+    return "CUP";
+  }
 
-editButtons.forEach(button => {
+  if (categoriaNormalizada.includes("docinho")) {
+    return "DOC";
+  }
 
-  button.addEventListener("click", () => {
+  if (categoriaNormalizada.includes("torta")) {
+    return "TOR";
+  }
 
-    sidebar.classList.add("active")
-
-    overlay.classList.add("active")
-
-  })
-
-})
-
-
-// =========================
-// SIMULAÇÃO SALVAR PRODUTO
-// =========================
-
-const saveBtn = document.querySelector(".save-btn")
-
-saveBtn.addEventListener("click", () => {
-
-  alert("Produto salvo com sucesso!")
-
-  closeSidebar()
-
-})
+  return "DOCE";
+}

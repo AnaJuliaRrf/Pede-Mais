@@ -410,9 +410,15 @@ body {
 .product-image {
   width: 120px;
   height: 130px;
-  background: #cfcaca;
+  background: linear-gradient(135deg, #ffe1ea, #fff4f7);
   border-radius: 6px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #be185d;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 /* CONTEÚDO */
