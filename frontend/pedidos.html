@@ -123,28 +123,6 @@
           <span class="contador">0</span>
         </div>
 
-        <div class="card" draggable="true"
-        data-pedido="#000"
-        data-cliente="Marina Santos"
-        data-produto="2x Pizza Calabresa"
-        data-tipo="Entrega"
-        data-pagamento="Dinheiro"
-        data-hora="21/05 - 21:45 às 22:45">
-
-          <div class="pedido">#000</div>
-          <div class="cliente">Marina Santos</div>
-
-          <div class="info">2x Pizza Calabresa</div>
-          <div class="info">Entrega</div>
-          <div class="info">Dinheiro</div>
-
-          <div class="hora">21/05 - 21:45 às 22:45</div>
-
-          <div class="menu-pedidos">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </div>
-        </div>
-
       </div>
 
       <!-- EM PREPARO -->
@@ -153,28 +131,6 @@
         <div class="status preparo" >
           Em preparo
           <span class="contador">0</span>
-        </div>
-
-        <div class="card" draggable="true"
-        data-pedido="#001"
-        data-cliente="João Pedro"
-        data-produto="1x Pizza Portuguesa"
-        data-tipo="Entrega"
-        data-pagamento="Pix"
-        data-hora="21/05 - 20:10 às 21:00">
-
-          <div class="pedido">#001</div>
-          <div class="cliente">João Pedro</div>
-
-          <div class="info">1x Pizza Portuguesa</div>
-          <div class="info">Entrega</div>
-          <div class="info">Pix</div>
-
-          <div class="hora">21/05 - 20:10 às 21:00</div>
-
-          <div class="menu-pedidos">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </div>
         </div>
 
       </div>
@@ -187,28 +143,6 @@
           <span class="contador">0</span>
         </div>
 
-        <div class="card" draggable="true"
-        data-pedido="#002"
-        data-cliente="Carlos Lima"
-        data-produto="2x Pizza Bacon"
-        data-tipo="Entrega"
-        data-pagamento="Cartão"
-        data-hora="21/05 - 19:30 às 20:30">
-
-          <div class="pedido">#002</div>
-          <div class="cliente">Carlos Lima</div>
-
-          <div class="info">2x Pizza Bacon</div>
-          <div class="info">Entrega</div>
-          <div class="info">Cartão</div>
-
-          <div class="hora">21/05 - 19:30 às 20:30</div>
-
-          <div class="menu-pedidos">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </div>
-        </div>
-
       </div>
 
       <!-- ENTREGUES -->
@@ -219,27 +153,16 @@
           <span class="contador">0</span>
         </div>
 
-        <div class="card" draggable="true"
-        data-pedido="#003"
-        data-cliente="Fernanda Silva"
-        data-produto="1x Pizza Frango"
-        data-tipo="Entrega"
-        data-pagamento="Pix"
-        data-hora="21/05 - 18:20 às 19:00">
+      </div>
 
-          <div class="pedido">#003</div>
-          <div class="cliente">Fernanda Silva</div>
+      <!-- CANCELADOS -->
+      <div class="coluna" id="cancelado">
 
-          <div class="info">1x Pizza Frango</div>
-          <div class="info">Entrega</div>
-          <div class="info">Pix</div>
-
-          <div class="hora">21/05 - 18:20 às 19:00</div>
-
-          <div class="menu-pedidos">
-            <i class="fa-solid fa-ellipsis-vertical"></i>
-          </div>
+        <div class="status cancelado">
+          Cancelados
+          <span class="contador">0</span>
         </div>
+
       </div>
     </div>
 
@@ -291,7 +214,7 @@
 
         <div>
           <span>Cliente</span>
-          <strong id="detalheCliente">Marina Santos</strong>
+          <strong id="detalheCliente">Cliente</strong>
         </div>
       </div>
 
@@ -300,7 +223,7 @@
 
         <div>
           <span>Data</span>
-          <strong>21/05/2026</strong>
+          <strong id="detalheData">18/06/2026</strong>
         </div>
       </div>
 
@@ -350,33 +273,14 @@
         </tr>
       </thead>
 
-      <tbody>
-
-        <tr>
-          <td id="detalheProduto">Pizza Calabresa</td>
-          <td>2x</td>
-          <td>R$ 70,00</td>
-        </tr>
-
-        <tr>
-          <td>Refrigerante 2L</td>
-          <td>1x</td>
-          <td>R$ 12,00</td>
-        </tr>
-
-        <tr>
-          <td>Borda recheada</td>
-          <td>1x</td>
-          <td>R$ 8,00</td>
-        </tr>
-
+      <tbody id="detalheItens">
       </tbody>
 
     </table>
 
     <div class="subtotal">
       <span>Subtotal:</span>
-      <strong>R$ 90,00</strong>
+      <strong id="detalheSubtotal">R$ 0,00</strong>
     </div>
 
   </div>
@@ -390,27 +294,27 @@
 
       <div>
         <span>Endereço</span>
-        <strong>Rua Exemplo, 123</strong>
+        <strong id="detalheEndereco">Rua das Flores, 120 - Centro</strong>
       </div>
 
       <div>
         <span>Bairro</span>
-        <strong>Centro</strong>
+        <strong id="detalheBairro">Centro</strong>
       </div>
 
       <div>
         <span>Cidade</span>
-        <strong>São Paulo - SP</strong>
+        <strong id="detalheCidade">Sao Paulo - SP</strong>
       </div>
 
       <div>
         <span>CEP</span>
-        <strong>00000-000</strong>
+        <strong>01001-000</strong>
       </div>
 
       <div>
         <span>Referência</span>
-        <strong>Casa azul</strong>
+        <strong>Confeitaria artesanal</strong>
       </div>
 
     </div>
@@ -605,7 +509,6 @@
   <script src="js/auth.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/dashboard.js"></script>
-  <script src="js/kanban.js"></script>
   <script src="js/painel-pedidos.js"></script>
   <script>setTodayDate();</script>
 

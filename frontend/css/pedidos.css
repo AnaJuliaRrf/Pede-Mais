@@ -252,7 +252,7 @@ body {
 
 .kanban{
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 20px;
 }
 
@@ -317,6 +317,15 @@ body {
 
 .entregue span{
   background-color: #bdbdbd;
+}
+
+.cancelado{
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.cancelado span{
+  background-color: #fca5a5;
 }
 
 .card{
@@ -708,6 +717,11 @@ table td{
 .status-badge.entregue{
   background: #e0e0e0;
   color: #666;
+}
+
+.status-badge.cancelado{
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 /* OCULTAR SCROLLBAR */
