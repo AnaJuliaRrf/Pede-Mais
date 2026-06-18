@@ -1,146 +1,135 @@
+let produtosEstoque = [];
+
 document.addEventListener("DOMContentLoaded", () => {
+  if (!verificarAutenticacao()) {
+    return;
+  }
 
-    carregarEstoque();
+  const filtroCategoria = document.getElementById("filtroCategoria");
+  if (filtroCategoria) {
+    filtroCategoria.addEventListener("change", aplicarFiltroCategoria);
+  }
 
+  carregarEstoque();
 });
 
 async function carregarEstoque() {
+  try {
+    const empresaId = localStorage.getItem("empresaId");
 
-    try {
+    produtosEstoque = await apiRequest(
+      `/empresas/${empresaId}/estoque`,
+      "GET",
+      null,
+      true,
+    );
 
-        const empresaId =
-            localStorage.getItem("empresaId");
+    popularCategorias(produtosEstoque);
+    renderizarTabela(produtosEstoque);
+  } catch (error) {
+    console.error("Erro ao carregar estoque:", error);
+  }
+}
 
-        const produtos = await apiRequest(
-            `/empresas/${empresaId}/produtos`,
-            "GET",
-            null,
-            true
-        );
+function popularCategorias(produtos) {
+  const filtroCategoria = document.getElementById("filtroCategoria");
+  if (!filtroCategoria) {
+    return;
+  }
 
-        renderizarTabela(produtos);
+  const categoriaAtual = filtroCategoria.value;
+  const categorias = [...new Set(produtos.map((produto) => produto.categoria))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
 
-    } catch (error) {
+  filtroCategoria.innerHTML = '<option value="">Todas as categorias</option>';
 
-        console.error(
-            "Erro ao carregar estoque:",
-            error
-        );
+  categorias.forEach((categoria) => {
+    const option = document.createElement("option");
+    option.value = categoria;
+    option.textContent = categoria;
+    filtroCategoria.appendChild(option);
+  });
 
-    }
+  if (categorias.includes(categoriaAtual)) {
+    filtroCategoria.value = categoriaAtual;
+  }
+}
 
+function aplicarFiltroCategoria() {
+  const categoria = document.getElementById("filtroCategoria").value;
+  const produtosFiltrados = categoria
+    ? produtosEstoque.filter((produto) => produto.categoria === categoria)
+    : produtosEstoque;
+
+  renderizarTabela(produtosFiltrados);
 }
 
 function renderizarTabela(produtos) {
+  const tabela = document.getElementById("tabelaEstoque");
+  tabela.innerHTML = "";
 
-    const tabela =
-        document.getElementById("tabelaEstoque");
+  produtos.forEach((produto) => {
+    const quantidade = Number(produto.quantidade || 0);
+    const estoqueMinimo = Number(produto.estoque_minimo || 0);
+    let status = "";
+    let statusClass = "";
 
-    tabela.innerHTML = "";
+    if (quantidade <= 0) {
+      status = "Sem estoque";
+      statusClass = "danger";
+    } else if (quantidade <= estoqueMinimo) {
+      status = "Baixo";
+      statusClass = "warning";
+    } else {
+      status = "Em estoque";
+      statusClass = "success";
+    }
 
-    produtos.forEach((produto) => {
-
-        let status = "";
-        let statusClass = "";
-
-        if (produto.estoque <= 0) {
-
-            status = "Sem estoque";
-            statusClass = "danger";
-
-        } else if (
-            produto.estoque <= produto.minimo
-        ) {
-
-            status = "Baixo";
-            statusClass = "warning";
-
-        } else {
-
-            status = "Em estoque";
-            statusClass = "success";
-
-        }
-
-        tabela.innerHTML += `
-
-            <tr>
-
-                <td>${produto.nome}</td>
-
-                <td>${produto.categoria}</td>
-
-                <td>${produto.estoque}</td>
-
-                <td>${produto.minimo}</td>
-
-                <td>
-                    <span class="status ${statusClass}">
-                        ${status}
-                    </span>
-                </td>
-
-                <td class="actions">
-
-                    <button
-                        class="edit-btn"
-                        onclick="editarProduto(${produto.id})"
-                    >
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-
-                    <button
-                        class="delete-btn"
-                        onclick="deletarProduto(${produto.id})"
-                    >
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-
-                </td>
-
-            </tr>
-
-        `;
-
-    });
-
+    tabela.innerHTML += `
+      <tr>
+        <td>${produto.nome}</td>
+        <td>${produto.categoria || "-"}</td>
+        <td>${quantidade}</td>
+        <td>${estoqueMinimo}</td>
+        <td>
+          <span class="status ${statusClass}">
+            ${status}
+          </span>
+        </td>
+        <td class="actions">
+          <button
+            class="edit-btn"
+            onclick="editarProduto(${produto.produto_id})"
+          >
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button
+            class="delete-btn"
+            onclick="deletarProduto(${produto.produto_id})"
+          >
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  });
 }
 
 function editarProduto(id) {
-
-    console.log(
-        "Editar produto:",
-        id
-    );
-
+  console.log("Editar produto:", id);
 }
 
 async function deletarProduto(id) {
+  const confirmar = confirm("Deseja excluir esse produto?");
 
-    const confirmar = confirm(
-        "Deseja excluir esse produto?"
-    );
+  if (!confirmar) return;
 
-    if (!confirmar) return;
+  try {
+    await apiRequest(`/produtos/${id}`, "DELETE", null, true);
 
-    try {
-
-        await apiRequest(
-            `/produtos/${id}`,
-            "DELETE",
-            null,
-            true
-        );
-
-        carregarEstoque();
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao deletar produto:",
-            error
-        );
-
-    }
-
+    carregarEstoque();
+  } catch (error) {
+    console.error("Erro ao deletar produto:", error);
+  }
 }
