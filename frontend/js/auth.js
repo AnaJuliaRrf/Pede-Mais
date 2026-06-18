@@ -21,6 +21,17 @@ async function login(email, senha) {
   window.location.href = "dashboard.html";
 }
 
+function verificarAutenticacao() {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    window.location.href = "index.html";
+    return false;
+  }
+
+  return true;
+}
+
 function logout() {
   localStorage.clear();
   window.location.href = "index.html";
