@@ -82,9 +82,6 @@ function renderizarProdutos(produtos) {
   produtos.forEach((produto) => {
     productsGrid.innerHTML += `
       <div class="product-card" data-categoria="${produto.categoria || ""}">
-        <div class="product-image">
-          <span>${getProdutoIcone(produto.categoria)}</span>
-        </div>
         <div class="product-info">
           <h3>${produto.nome}</h3>
           <div class="category">${produto.categoria || "-"}</div>
@@ -162,26 +159,4 @@ function formatarMoeda(value) {
     style: "currency",
     currency: "BRL",
   });
-}
-
-function getProdutoIcone(categoria = "") {
-  const categoriaNormalizada = categoria.toLowerCase();
-
-  if (categoriaNormalizada.includes("bolo")) {
-    return "BOLO";
-  }
-
-  if (categoriaNormalizada.includes("cupcake")) {
-    return "CUP";
-  }
-
-  if (categoriaNormalizada.includes("docinho")) {
-    return "DOC";
-  }
-
-  if (categoriaNormalizada.includes("torta")) {
-    return "TOR";
-  }
-
-  return "DOCE";
 }

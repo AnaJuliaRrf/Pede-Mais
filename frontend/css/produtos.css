@@ -399,31 +399,17 @@ body {
 .product-card {
   background: white;
   border-radius: 10px;
-  padding: 10px;
+  padding: 16px;
   display: flex;
   align-items: flex-start;
   gap: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
 
-/* IMAGEM */
-.product-image {
-  width: 120px;
-  height: 130px;
-  background: linear-gradient(135deg, #ffe1ea, #fff4f7);
-  border-radius: 6px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #be185d;
-  font-size: 18px;
-  font-weight: 700;
-}
-
 /* CONTEÚDO */
 .product-info {
   flex: 1;
+  min-width: 0;
 }
 
 /* TÍTULO */

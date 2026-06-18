@@ -37,6 +37,26 @@ function logout() {
   window.location.href = "index.html";
 }
 
+function aplicarLogoEmpresa() {
+  const empresaId = String(localStorage.getItem("empresaId") || "");
+  const logo = document.querySelector(".logo img");
+
+  if (!logo) {
+    return;
+  }
+
+  if (empresaId === "1001") {
+    logo.src = "./assets/logo-pastelaria-rio.svg";
+    logo.alt = "Pastelaria Rio";
+    return;
+  }
+
+  logo.src = "./assets/logo-doces-larissa.svg";
+  logo.alt = "Doces da Larissa";
+}
+
+document.addEventListener("DOMContentLoaded", aplicarLogoEmpresa);
+
 if (loginForm && passwordInput) {
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
